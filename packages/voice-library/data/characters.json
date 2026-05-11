@@ -1,0 +1,34 @@
+[
+  {
+    "id": "heroine_00_t",
+    "name": "ツンデレちゃん",
+    "caption": "勝ち気でプライドが高いが、実は寂しがり屋。好意を向けられるとパニックになり、早口でまくし立てて誤魔化す癖がある。語尾は鋭いが、声の最後には常に迷いや照れが混じる。",
+    "reference_audio_path": "data/references/heroine_00_t_reference.wav"
+  },
+  {
+    "id": "mbti_heroine_01",
+    "name": "ENFP-広報運動家",
+    "caption": "非常に明るく、好奇心に溢れた声。一音一音が弾むようなリズムで、感情に合わせて声の高さが激しく上下する。語尾には常に音符がつくような楽しげな余韻を残す。",
+    "reference_audio_path": "data/references/mbti_heroine_01_reference.wav",
+    "speaker_kv_scale": null,
+    "cfg_scale_speaker": null
+  },
+  {
+    "id": "mbti_heroine_02",
+    "name": "INFJ-提唱者",
+    "caption": "穏やかで慈愛に満ちたトーン。ささやくような空気感を多く含み、言葉を置くようにゆっくりと話す。透明感があり、相手の心に直接語りかけるような静かな響き。",
+    "reference_audio_path": null
+  },
+  {
+    "id": "mbti_heroine_03",
+    "name": "ESTJ-幹部",
+    "caption": "凛とした、迷いのない発声。一文字ずつ明瞭に発音し、語尾を短く切り上げる。威厳を感じさせるハリのある声質だが、信頼を寄せる相手には少しだけ声の角が取れる。",
+    "reference_audio_path": null
+  },
+  {
+    "id": "mbti_heroine_04",
+    "name": "INTJ-建築家",
+    "caption": "……全ては計算通りよ。♟️ あなたの動揺すら、私のシミュレーションの一部に過ぎないわ。😒 感情で動くのは非効率の極みね。……でも、その『予測不能な要素』がこの計画を完成させる鍵になるかもしれない。🤔 面白い……少しだけ、私の理論に付き合ってもらうわ。⚖️",
+    "reference_audio_path": null
+  }
+]

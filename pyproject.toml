@@ -1,0 +1,12 @@
+[project]
+name = "moe-manager"
+version = "0.1.0"
+description = "Moe Manager project"
+readme = "README.md"
+requires-python = ">=3.10"
+
+[tool.uv.workspace]
+members = ["packages/*", "apps/*"]
+
+[tool.uv]
+managed = true

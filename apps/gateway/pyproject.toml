@@ -1,0 +1,22 @@
+[project]
+name = "gateway"
+version = "0.1.0"
+description = "API gateway aggregating all Moe Manager modules"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "moe-user",
+    "moe-character",
+    "moe-task",
+    "moe-screentime",
+    "moe-statistics",
+    "voice-library",
+]
+
+[tool.setuptools]
+packages = ["gateway"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

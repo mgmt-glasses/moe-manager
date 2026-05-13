@@ -1,0 +1,17 @@
+[project]
+name = "moe-screentime"
+version = "0.1.0"
+description = "Screen time and entertainment duration tracking module"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.0.0",
+    "sqlalchemy",
+    "fastapi",
+]
+
+[tool.setuptools]
+packages = ["moe_screentime"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

@@ -1,0 +1,17 @@
+[project]
+name = "moe-task"
+version = "0.1.0"
+description = "Task management module"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.0.0",
+    "sqlalchemy",
+    "fastapi",
+]
+
+[tool.setuptools]
+packages = ["moe_task"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

@@ -1,0 +1,19 @@
+[project]
+name = "moe-statistics"
+version = "0.1.0"
+description = "Task and screen time statistics module"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.0.0",
+    "sqlalchemy",
+    "fastapi",
+    "moe-task",
+    "moe-screentime",
+]
+
+[tool.setuptools]
+packages = ["moe_statistics"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

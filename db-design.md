@@ -80,7 +80,7 @@ DB内のデータは以下のカテゴリに分類する。
 | created_at | datetime | 登録日時 |
 | completed_at | datetime | 完了日時 |
 
-### entertainment_logs
+### entertainment_records
 
 手動入力された娯楽時間を記録する。
 
@@ -88,7 +88,7 @@ DB内のデータは以下のカテゴリに分類する。
 | --- | --- | --- |
 | id | text | 記録ID |
 | user_id | text | ユーザID |
-| target_date | date | 対象日 |
+| date | date | 対象日 |
 | minutes | integer | 娯楽時間（分） |
 | target_minutes_snapshot | integer | その時点の目標時間（統計用） |
 | created_at | datetime | 記録日時 |
@@ -111,16 +111,29 @@ DB内のデータは以下のカテゴリに分類する。
 | voice_file_id | text | 生成されたボイスファイルのID（存在する場合） |
 | created_at | datetime | 発言日時 |
 
+### voice_files
+
+生成された音声ファイルのメタデータを管理する。
+
+| カラム | 型 | 説明 |
+| --- | --- | --- |
+| id | text | ファイルID（例: `voice_file_001`） |
+| character_id | text | 生成に使用したキャラID |
+| text | text | 読み上げ元テキスト |
+| file_path | text | ローカルの保存パス |
+| created_at | datetime | 生成日時 |
+
 ## 8. インデックス方針
 
 効率的なデータ取得のため、以下のインデックスを付与する。
 
 - `tasks(user_id, status, created_at)`: 未完了タスクの取得用
-- `entertainment_logs(user_id, target_date)`: 特定日の記録確認用
+- `entertainment_records(user_id, date)`: 特定日の記録確認用
 - `chat_logs(user_id, created_at)`: 直近の文脈取得用
+- `voice_files(character_id, created_at)`: 音声ファイルの履歴取得用
 
 ## 9. マイグレーション計画
 
 1. **001_init_master_and_user.sql**: `characters`, `users` の作成と初期キャラデータの投入。
-2. **002_init_task_and_activity.sql**: `tasks`, `entertainment_logs` の作成。
-3. **003_init_logs.sql**: `chat_logs` の作成。
+2. **002_init_task_and_activity.sql**: `tasks`, `entertainment_records` の作成。
+3. **003_init_logs.sql**: `chat_logs`, `voice_files` の作成。

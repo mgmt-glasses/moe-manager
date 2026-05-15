@@ -430,7 +430,7 @@ DELETE /api/v1/users/{userId}/tasks/{taskId}
 MVPではスクリーンタイム自動取得ではなく、手動入力。
 
 ```http
-PUT /api/v1/users/{userId}/entertainment-times/{date}
+PUT /api/v1/users/{userId}/entertainment-records/{date}
 ```
 
 ### Request
@@ -465,7 +465,7 @@ PUT /api/v1/users/{userId}/entertainment-times/{date}
 ## 7.2 娯楽時間取得
 
 ```http
-GET /api/v1/users/{userId}/entertainment-times/{date}
+GET /api/v1/users/{userId}/entertainment-records/{date}
 ```
 
 ### Response
@@ -489,7 +489,7 @@ GET /api/v1/users/{userId}/entertainment-times/{date}
 ## 7.3 娯楽時間履歴取得
 
 ```http
-GET /api/v1/users/{userId}/entertainment-times
+GET /api/v1/users/{userId}/entertainment-records
 ```
 
 ### Query
@@ -669,13 +669,13 @@ POST /api/v1/users/{userId}/chat/messages
   "data": {
     "userMessage": {
       "chatLogId": "chat_001",
-      "speaker": "user",
+      "role": "user",
       "message": "今日はちょっとゲームしすぎたかも",
       "createdAt": "2026-05-13T21:00:00+09:00"
     },
     "assistantMessage": {
       "chatLogId": "chat_002",
-      "speaker": "character",
+      "role": "assistant",
       "characterId": "char_istj_001",
       "message": "社長、正直に報告できたのは良いことです。ただ、明日は目標時間を意識して、先にタスクを片付けましょう。",
       "voiceUrl": "/api/v1/voice-files/voice_file_001",
@@ -720,7 +720,7 @@ cursor=xxx
     "messages": [
       {
         "chatLogId": "chat_001",
-        "speaker": "user",
+        "role": "user",
         "message": "今日はちょっとゲームしすぎたかも",
         "characterId": "char_istj_001",
         "voiceUrl": null,
@@ -728,7 +728,7 @@ cursor=xxx
       },
       {
         "chatLogId": "chat_002",
-        "speaker": "character",
+        "role": "assistant",
         "message": "社長、正直に報告できたのは良いことです。",
         "characterId": "char_istj_001",
         "voiceUrl": "/api/v1/voice-files/voice_file_001",
@@ -830,13 +830,13 @@ characterId=char_istj_001
     "logs": [
       {
         "chatLogId": "chat_001",
-        "speaker": "user",
+        "role": "user",
         "message": "おはよう",
         "createdAt": "2026-05-13T08:00:00+09:00"
       },
       {
         "chatLogId": "chat_002",
-        "speaker": "character",
+        "role": "assistant",
         "message": "おはようございます、社長。本日も予定を確認しましょう。",
         "voiceUrl": "/api/v1/voice-files/voice_file_001",
         "createdAt": "2026-05-13T08:00:05+09:00"
@@ -952,11 +952,11 @@ GET /api/v1/setup/options
   },
   "recentChatLogs": [
     {
-      "speaker": "user",
+      "role": "user",
       "message": "今日の予定を確認したい"
     },
     {
-      "speaker": "character",
+      "role": "assistant",
       "message": "承知しました、社長。まずはタスク一覧を確認しましょう。"
     }
   ]
@@ -1006,9 +1006,9 @@ DELETE /users/{userId}/tasks/{taskId}
 ## Phase 3：娯楽時間
 
 ```txt
-PUT /users/{userId}/entertainment-times/{date}
-GET /users/{userId}/entertainment-times/{date}
-GET /users/{userId}/entertainment-times
+PUT /users/{userId}/entertainment-records/{date}
+GET /users/{userId}/entertainment-records/{date}
+GET /users/{userId}/entertainment-records
 ```
 
 ## Phase 4：統計
@@ -1050,7 +1050,7 @@ POST /api/v1/users/{userId}/tasks
 GET /api/v1/users/{userId}/tasks
 PATCH /api/v1/users/{userId}/tasks/{taskId}/complete
 
-PUT /api/v1/users/{userId}/entertainment-times/{date}
+PUT /api/v1/users/{userId}/entertainment-records/{date}
 GET /api/v1/users/{userId}/stats/today
 
 POST /api/v1/users/{userId}/chat/messages
@@ -1156,3 +1156,43 @@ systemPromptFragment
 ```
 
 特に `systemPromptFragment` を持たせると、キャラ別のAI応答を管理しやすい。
+
+---
+
+# 18. API設計の補足仕様
+
+## 18.1 キャラクター画像・音声のURL変換ルール
+
+DBに保存されているパス（例: `characters/istj/icon.png`）は、APIレスポンス生成時に以下のプレフィックスを付与してURLに変換する。
+
+- 画像: `/assets/{path}`
+- 音声: `/assets/{path}`
+
+変換例:
+`icon_path: "characters/istj/icon.png"`
+→ `iconUrl: "/assets/characters/istj/icon.png"`
+
+## 18.2 summaryText の生成方針
+
+MVPではAIを使わず、以下のテンプレートで生成する。
+
+【タスク部分】
+- completionRate >= 80% → "今日は{total}件中{completed}件のタスクを完了しています。好調です！"
+- completionRate >= 50% → "今日は{total}件中{completed}件のタスクを完了しています。"
+- completionRate < 50%  → "今日は{total}件中{completed}件のタスク完了です。残りを頑張りましょう。"
+
+【娯楽時間部分】
+- diff > 0  → "娯楽時間は目標を{diff}分超過しています。"
+- diff == 0 → "娯楽時間は目標通りです。"
+- diff < 0  → "娯楽時間は目標より{|diff|}分少ないです。"
+
+【結合例】
+"今日は5件中3件のタスクを完了しています。娯楽時間は目標を60分超過しています。"
+
+## 18.3 タスク取得の date パラメータ
+
+タスク一覧取得時の `date` は `tasks.created_at` の日付（JST）で絞り込む。
+`completed_at` は絞り込み対象外とする。
+
+例：`date=2026-05-13` の場合
+`created_at` が `2026-05-13T00:00:00+09:00` 〜 `2026-05-13T23:59:59+09:00` のタスクを返す。

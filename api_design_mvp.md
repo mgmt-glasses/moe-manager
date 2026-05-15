@@ -1174,20 +1174,11 @@ DBに保存されているパス（例: `characters/istj/icon.png`）は、API�
 
 ## 18.2 summaryText の生成方針
 
-MVPではAIを使わず、以下のテンプレートで生成する。
+MVP段階から、AIを利用して動的に生成する。
+タスクの完了状況（`completedTaskCount` / `totalTaskCount`）と娯楽時間の状況（`entertainmentDiffMinutes`）をコンテキストとしてAIに渡し、ユーザーへの短いサマリーテキストを生成させる。
 
-【タスク部分】
-- completionRate >= 80% → "今日は{total}件中{completed}件のタスクを完了しています。好調です！"
-- completionRate >= 50% → "今日は{total}件中{completed}件のタスクを完了しています。"
-- completionRate < 50%  → "今日は{total}件中{completed}件のタスク完了です。残りを頑張りましょう。"
-
-【娯楽時間部分】
-- diff > 0  → "娯楽時間は目標を{diff}分超過しています。"
-- diff == 0 → "娯楽時間は目標通りです。"
-- diff < 0  → "娯楽時間は目標より{|diff|}分少ないです。"
-
-【結合例】
-"今日は5件中3件のタスクを完了しています。娯楽時間は目標を60分超過しています。"
+例：
+"今日は5件中3件のタスクを完了しています。娯楽時間は目標を60分超過していますが、明日はタスクを優先しましょう！"
 
 ## 18.3 タスク取得の date パラメータ
 

@@ -24,7 +24,7 @@ moe-manager/
 │   │           ├── inbound/api/
 │   │           │   └── user_router.py          ← FastAPI ルーター
 │   │           └── outbound/repositories/
-│   │               └── sqlite_user_repository.py
+│   │               └── postgres_user_repository.py
 │   │
 │   ├── character/                  # Phase 2 MBTIキャラ選択
 │   │   └── moe_character/
@@ -34,7 +34,7 @@ moe-manager/
 │   │       │   └── use_cases.py
 │   │       └── adapters/
 │   │           ├── inbound/api/character_router.py
-│   │           └── outbound/repositories/sqlite_character_repository.py
+│   │           └── outbound/repositories/postgres_character_repository.py
 │   │
 │   ├── task/                       # Phase 3 タスク管理
 │   │   └── moe_task/
@@ -44,7 +44,7 @@ moe-manager/
 │   │       │   └── use_cases.py
 │   │       └── adapters/
 │   │           ├── inbound/api/task_router.py
-│   │           └── outbound/repositories/sqlite_task_repository.py
+│   │           └── outbound/repositories/postgres_task_repository.py
 │   │
 │   ├── screentime/                 # Phase 4 娯楽時間管理
 │   │   └── moe_screentime/
@@ -54,7 +54,7 @@ moe-manager/
 │   │       │   └── use_cases.py
 │   │       └── adapters/
 │   │           ├── inbound/api/screentime_router.py
-│   │           └── outbound/repositories/sqlite_screentime_repository.py
+│   │           └── outbound/repositories/postgres_screentime_repository.py
 │   │
 │   ├── statistics/                 # Phase 5 統計管理
 │   │   └── moe_statistics/
@@ -64,7 +64,7 @@ moe-manager/
 │   │       │   └── use_cases.py
 │   │       └── adapters/
 │   │           ├── inbound/api/statistics_router.py
-│   │           └── outbound/repositories/sqlite_statistics_repository.py
+│   │           └── outbound/repositories/postgres_statistics_repository.py
 │   │
 │   └── voice-library/              # Phase 6-7 チャット・ボイス（既存）
 │       └── mkh_voice/
@@ -98,13 +98,13 @@ moe-manager/
       ┌────────────┴─────────────────┐
       │                              │
   inbound/                       outbound/
-  FastAPI Router                 SQLite / LLM / TTS
+  FastAPI Router                 PostgreSQL / LLM / TTS
   （外からの入口）               （外への出口）
 ```
 
 - **domain** は Python 標準ライブラリと Pydantic のみに依存する
 - **inbound adapter**（FastAPI Router）は domain の use_cases を呼ぶ
-- **outbound adapter**（SQLite Repository など）は domain の ports を実装する
+- **outbound adapter**（PostgreSQL Repository など）は domain の ports を実装する
 - use_cases は ports の Protocol 型だけを知り、具体的なアダプタを知らない
 
 ---
@@ -137,7 +137,7 @@ moe_task/adapters/inbound/api/task_router.py  ← HTTPリクエストをドメ�
 moe_task/domain/use_cases.py (TaskUseCase)    ← ビジネスロジック
     │  TaskRepositoryPort 経由
     ▼
-moe_task/adapters/outbound/repositories/sqlite_task_repository.py  ← SQLite に永続化
+moe_task/adapters/outbound/repositories/postgres_task_repository.py  ← PostgreSQL に永続化
 ```
 
 ---
@@ -158,30 +158,31 @@ statistics → task / screentime（集計クエリのみ）
 
 ## 7. DB 戦略
 
-### 現在：SQLite
+### PostgreSQL
 
 ```
-data/moe.db  ← 全モジュールが同一ファイルを参照
+moe（データベース）  ← 全モジュールが同一データベースを参照
 ```
 
-全テーブルが同一 SQLite ファイルに作られるため、`moe_statistics` は
+全テーブルが同一 PostgreSQL データベースに作られるため、`moe_statistics` は
 `tasks` / `screentime_records` テーブルを JOIN して集計できる。
 
-### 将来：PostgreSQL（Supabase）への移行
-
-SQLAlchemy の接続 URL を変えるだけで移行可能。
+接続情報は環境変数 `DATABASE_URL` で渡す。ローカル開発では Docker で
+PostgreSQL を起動し、本番でも同じ PostgreSQL を利用する。
 
 ```python
-# SQLite（開発）
-create_engine("sqlite:///data/moe.db")
+# psycopg で接続
+import os
+import psycopg
 
-# PostgreSQL（本番）
-create_engine("postgresql://user:pass@host/dbname")
+conn = psycopg.connect(os.environ["DATABASE_URL"])
 ```
 
-各 `SQLiteXxxRepository` を `PostgreSQLXxxRepository` に差し替えるか、
-接続URLだけ変えて同じファイルを使い続けることも可能。
-Port が抽象化しているため domain/use_cases には変更不要。
+### 将来：Supabase への移行
+
+Supabase はマネージド PostgreSQL のため、接続先 URL の変更だけで移行できる。
+各 `PostgresXxxRepository` の実装は変更不要で、Port が抽象化しているため
+domain / use_cases にも影響しない。
 
 ---
 
@@ -209,7 +210,7 @@ Phase 順に以下を繰り返す：
 1. `domain/models.py` にエンティティを定義
 2. `domain/ports.py` にインターフェースを定義
 3. `domain/use_cases.py` にビジネスロジックを実装
-4. `outbound/repositories/` に SQLite アダプタを実装
+4. `outbound/repositories/` に PostgreSQL アダプタを実装
 5. `inbound/api/` に FastAPI ルーターを実装
 6. `apps/gateway/main.py` にルーターを追加
 

@@ -1119,7 +1119,7 @@ MVPでは stats テーブルに全部保存しなくてもよい。
 
 ```txt
 tasks
-entertainment_times
+screentime_records
 users.targetEntertainmentMinutes
 ```
 

@@ -21,6 +21,8 @@
 
 - [MVP 仕様サマリー](mvp-summary.md)
   - MVP で実現する体験、機能、画面構成の要約です。
+- [Issue ドキュメント](Issue/README.md)
+  - Issue ごとの作業範囲、受け入れ条件、実装観点を整理しています。
 - [API 方針](api-guidelines.md)
   - API 設計の共通ルールとドメイン一覧です。
 - [DB 方針](database-guidelines.md)

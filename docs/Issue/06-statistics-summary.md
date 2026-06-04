@@ -37,6 +37,79 @@ MVP では、タスクと娯楽時間の状況を可視化し、チャットで�
 
 集計は Query interface と adapter で扱い、service が他モジュールの内部実装に依存しないようにする。
 
+### 作成するファイル
+
+```
+internal/statistics/
+├── model.go          ← DailyStats / WeeklyStats 定義
+├── service.go        ← StatisticsQuery interface + StatisticsService
+├── handler.go        ← HTTP handler（3エンドポイント）
+└── adapter/
+    └── postgres.go   ← PostgreSQL 横断クエリ実装
+```
+
+### model.go
+
+```go
+type DailyStats struct {
+    Date                       time.Time
+    CompletedTaskCount         int
+    TodoTaskCount              int
+    TotalTaskCount             int
+    TaskCompletionRate         int  // 0-100（%）
+    EntertainmentMinutes       int
+    TargetEntertainmentMinutes int
+    EntertainmentDiffMinutes   int
+}
+
+type WeeklyStats struct {
+    From time.Time
+    To   time.Time
+    Days []DailyStats
+}
+```
+
+### service.go
+
+```go
+type StatisticsQuery interface {
+    GetDailyStats(ctx context.Context, userID string, date time.Time) (DailyStats, error)
+}
+
+type StatisticsService struct { query StatisticsQuery }
+
+func (s *StatisticsService) GetToday(ctx, userID) (DailyStats, error)
+func (s *StatisticsService) GetDaily(ctx, userID, date) (DailyStats, error)
+func (s *StatisticsService) GetWeekly(ctx, userID, endDate) (WeeklyStats, error)
+// GetWeekly は endDate から 7 日分を GetDailyStats でループ集計
+```
+
+### adapter/postgres.go
+
+- `tasks` テーブルを `user_id` + `created_at::date = $date` で集計する。
+  - `status = 'done'` の件数 → `CompletedTaskCount`
+  - `status = 'todo'` の件数 → `TodoTaskCount`
+  - 完了率 = done / total × 100（total = 0 なら 0）
+- `screentime_records` テーブルを `user_id` + `date = $date` で取得する。
+  - レコードなし → `EntertainmentMinutes = 0`、`TargetEntertainmentMinutes = 0`
+- `internal/task` / `internal/screentime` の実装型は import しない。テーブル名だけを知る。
+
+### handler.go
+
+| メソッド | パス | レスポンス型 |
+| --- | --- | --- |
+| `GET` | `/api/v1/users/{userId}/stats/today` | `tasks` / `entertainment` のネスト構造 + `summaryText` |
+| `GET` | `/api/v1/users/{userId}/stats/daily/{date}` | フラット構造 + `summaryText` |
+| `GET` | `/api/v1/users/{userId}/stats/weekly` | `from`, `to`, `days[]`（`endDate` クエリパラメータ、省略時は今日） |
+
+レスポンスはすべて `{"success": true, "data": {...}, "error": null}` 形式に統一する。  
+`summaryText` の生成方法は未確定（LLM 生成 or テンプレート）。本 Issue では静的テンプレートで仮実装し、チャット Issue で差し替えを検討する。
+
+### cmd/api/ への追加
+
+- statistics handler のルート登録を行う。
+- `PostgresStatisticsQuery` を DI で注入する。
+
 ## 受け入れ条件
 
 - [ ] 今日の統計を取得できる。
@@ -51,7 +124,7 @@ MVP では、タスクと娯楽時間の状況を可視化し、チャットで�
 
 - `GET /api/v1/users/{userId}/stats/today`
 - `GET /api/v1/users/{userId}/stats/daily/{date}`
-- `GET /api/v1/users/{userId}/stats/weekly`
+- `GET /api/v1/users/{userId}/stats/weekly?endDate=YYYY-MM-DD`（`endDate` 省略時は今日）
 
 ### DB
 

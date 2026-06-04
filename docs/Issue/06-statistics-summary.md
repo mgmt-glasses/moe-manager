@@ -8,7 +8,7 @@
 ## 背景
 
 MVP では、タスクと娯楽時間の状況を可視化し、チャットでの秘書キャラの反応にも利用できるようにする。
-`moe_statistics` は例外的に他パッケージのテーブルを横断して集計できる。
+`internal/statistics` は例外的に他ドメインが管理するテーブルを Query adapter から横断して集計できる。
 
 ## 対象範囲
 
@@ -27,15 +27,15 @@ MVP では、タスクと娯楽時間の状況を可視化し、チャットで�
 
 ## 実装方針
 
-- 対象モジュール: `moe_statistics`, `gateway`
+- 対象モジュール: `statistics`, `api`
 - 想定ブランチ: `feature/statistics-summary`
 - 主な変更ファイル/ディレクトリ:
-  - `packages/statistics/`
-  - `apps/gateway/gateway/main.py`
+  - `internal/statistics/`
+  - `cmd/api/`
 - 依存する Issue: `04-task-management.md`, `05-screentime-recording.md`
 - 後続 Issue: `02-character-chat.md`
 
-集計は Query Port と outbound adapter で扱い、domain が他モジュールの内部実装に依存しないようにする。
+集計は Query interface と adapter で扱い、service が他モジュールの内部実装に依存しないようにする。
 
 ## 受け入れ条件
 

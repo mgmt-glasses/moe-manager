@@ -68,29 +68,12 @@ DB は、ユーザ設定、タスク、娯楽時間、チャット履歴を永�
 
 ## マイグレーション実行方法
 
-MVP では外部ツール（Alembic 等）を使わず、アプリ起動時に SQL ファイルを順番に適用するシンプルな方式を基本とします。
-
-```python
-# apps/gateway/gateway/migrations.py（例）
-import pathlib
-import psycopg
-
-MIGRATIONS_DIR = pathlib.Path("migrations")
-
-def apply_migrations(dsn: str) -> None:
-    with psycopg.connect(dsn) as conn:
-        applied = _get_applied(conn)
-        for sql_file in sorted(MIGRATIONS_DIR.glob("*.sql")):
-            if sql_file.name not in applied:
-                conn.execute(sql_file.read_text())
-                _record_applied(conn, sql_file.name)
-        conn.commit()
-```
-
-将来的にスキーマ変更が増えてきたら Alembic の導入を検討します。
+マイグレーションは `migrations/` の SQL ファイルを Go アプリケーションまたは専用 CLI から順番に適用します。
+採用するライブラリは Go 基盤作成時に決定し、全 Issue で同じ方法を使用します。
+アプリケーションの domain/service からマイグレーションを実行せず、`cmd/api` の起動処理または専用コマンドに閉じます。
 
 ## 将来の DB 移行
 
 将来的には Supabase（マネージド PostgreSQL）への移行を想定します。
 同じ PostgreSQL のため接続先 URL の変更で移行でき、
-domain と use case は repository port にのみ依存させ、DB 実装の差し替えができる状態を保ちます。
+model と service は repository interface にのみ依存させ、DB 実装の差し替えができる状態を保ちます。

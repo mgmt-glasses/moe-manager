@@ -8,7 +8,7 @@
 ## 背景
 
 MVP では、秘書キャラがユーザの行動に反応するための主要データとしてタスク情報を扱う。
-タスク管理は `moe_task` に閉じ、他モジュールからは gateway や Query Port 経由で参照する。
+タスク管理は `internal/task` に閉じ、他ドメインからは利用側が定義する Query interface 経由で参照する。
 
 ## 対象範囲
 
@@ -28,15 +28,16 @@ MVP では、秘書キャラがユーザの行動に反応するための主要�
 
 ## 実装方針
 
-- 対象モジュール: `moe_task`, `gateway`
+- 対象モジュール: `task`, `api`
 - 想定ブランチ: `feature/task-management`
 - 主な変更ファイル/ディレクトリ:
-  - `packages/task/`
-  - `apps/gateway/gateway/main.py`
+  - `internal/task/`
+  - `cmd/api/`
+  - `migrations/`
 - 依存する Issue: なし
 - 後続 Issue: `02-character-chat.md`, `06-statistics-summary.md`
 
-実装は domain model、port、use case、repository、API router、gateway router 登録の順で進める。
+実装は domain model、interface、use case、repository adapter、HTTP handler、`cmd/api` での登録の順で進める。
 
 ## 受け入れ条件
 

@@ -52,7 +52,7 @@ func (s *Service) List(ctx context.Context, userID string) ([]Task, error) {
 func (s *Service) Complete(ctx context.Context, userID, taskID string) (Task, error) {
 	t, err := s.repo.FindByID(ctx, taskID)
 	if err != nil {
-		return Task{}, ErrNotFound
+		return Task{}, err
 	}
 	if t.UserID != userID {
 		return Task{}, ErrForbidden
@@ -69,7 +69,7 @@ func (s *Service) Complete(ctx context.Context, userID, taskID string) (Task, er
 func (s *Service) Reopen(ctx context.Context, userID, taskID string) (Task, error) {
 	t, err := s.repo.FindByID(ctx, taskID)
 	if err != nil {
-		return Task{}, ErrNotFound
+		return Task{}, err
 	}
 	if t.UserID != userID {
 		return Task{}, ErrForbidden
@@ -85,7 +85,7 @@ func (s *Service) Reopen(ctx context.Context, userID, taskID string) (Task, erro
 func (s *Service) Delete(ctx context.Context, userID, taskID string) error {
 	t, err := s.repo.FindByID(ctx, taskID)
 	if err != nil {
-		return ErrNotFound
+		return err
 	}
 	if t.UserID != userID {
 		return ErrForbidden

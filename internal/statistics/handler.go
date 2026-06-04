@@ -1,12 +1,12 @@
 package statistics
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/mgmt-glasses/moe-manager/internal/shared"
 )
 
 type Handler struct {
@@ -17,36 +17,11 @@ func NewHandler(svc *StatisticsService) *Handler {
 	return &Handler{svc: svc}
 }
 
-type apiResponse struct {
-	Success bool      `json:"success"`
-	Data    any       `json:"data"`
-	Error   *apiError `json:"error"`
-}
-
-type apiError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
-}
-
-func writeError(w http.ResponseWriter, status int, code, message string) {
-	writeJSON(w, status, apiResponse{
-		Success: false,
-		Data:    nil,
-		Error:   &apiError{Code: code, Message: message},
-	})
-}
-
 func (h *Handler) GetToday(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "userId")
 	stats, err := h.svc.GetToday(r.Context(), userID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "統計の取得に失敗しました")
+		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "統計の取得に失敗しました")
 		return
 	}
 
@@ -68,7 +43,7 @@ func (h *Handler) GetToday(w http.ResponseWriter, r *http.Request) {
 		SummaryText   string            `json:"summaryText"`
 	}
 
-	writeJSON(w, http.StatusOK, apiResponse{
+	shared.WriteJSON(w, http.StatusOK, shared.Response{
 		Success: true,
 		Data: todayData{
 			Date: stats.Date.Format("2006-01-02"),
@@ -92,13 +67,13 @@ func (h *Handler) GetDaily(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "userId")
 	date, err := time.Parse("2006-01-02", chi.URLParam(r, "date"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_DATE", "日付の形式が正しくありません（YYYY-MM-DD）")
+		shared.WriteError(w, http.StatusBadRequest, "INVALID_DATE", "日付の形式が正しくありません（YYYY-MM-DD）")
 		return
 	}
 
 	stats, err := h.svc.GetDaily(r.Context(), userID, date)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "統計の取得に失敗しました")
+		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "統計の取得に失敗しました")
 		return
 	}
 
@@ -114,7 +89,7 @@ func (h *Handler) GetDaily(w http.ResponseWriter, r *http.Request) {
 		SummaryText                string `json:"summaryText"`
 	}
 
-	writeJSON(w, http.StatusOK, apiResponse{
+	shared.WriteJSON(w, http.StatusOK, shared.Response{
 		Success: true,
 		Data: dailyData{
 			Date:                       stats.Date.Format("2006-01-02"),
@@ -138,14 +113,14 @@ func (h *Handler) GetWeekly(w http.ResponseWriter, r *http.Request) {
 		var err error
 		endDate, err = time.Parse("2006-01-02", s)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_DATE", "endDate の形式が正しくありません（YYYY-MM-DD）")
+			shared.WriteError(w, http.StatusBadRequest, "INVALID_DATE", "endDate の形式が正しくありません（YYYY-MM-DD）")
 			return
 		}
 	}
 
 	weekly, err := h.svc.GetWeekly(r.Context(), userID, endDate)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "統計の取得に失敗しました")
+		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "統計の取得に失敗しました")
 		return
 	}
 
@@ -177,7 +152,7 @@ func (h *Handler) GetWeekly(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	writeJSON(w, http.StatusOK, apiResponse{
+	shared.WriteJSON(w, http.StatusOK, shared.Response{
 		Success: true,
 		Data: weeklyData{
 			From: weekly.From.Format("2006-01-02"),

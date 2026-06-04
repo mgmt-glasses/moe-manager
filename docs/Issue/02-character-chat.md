@@ -8,7 +8,7 @@
 ## 背景
 
 MVP の中心体験は、ユーザの行動に対して秘書キャラが会話で反応することにある。
-チャット生成自体は `mkh_voice` の責務とし、他モジュール情報の取得・統合は gateway 層で扱う。
+チャット生成と他ドメイン情報の統合は Go の `internal/chat` の責務とし、`cmd/api` は依存性注入に徹する。
 
 ## 対象範囲
 
@@ -27,15 +27,30 @@ MVP の中心体験は、ユーザの行動に対して秘書キャラが会話�
 
 ## 実装方針
 
-- 対象モジュール: `mkh_voice`, `gateway`
-- 想定ブランチ: `feature/voice-character-chat`
+- 対象モジュール: `chat`, `api`
+- 想定ブランチ: `feature/chat-character-response`
 - 主な変更ファイル/ディレクトリ:
-  - `packages/voice-library/`
-  - `apps/gateway/gateway/main.py`
+  - `internal/chat/`
+  - `cmd/api/`
 - 依存する Issue: `01-character-selection.md`, `04-task-management.md`, `05-screentime-recording.md`
 - 後続 Issue: `03-character-voice.md`, `07-chat-logs.md`
 
-gateway で `moe_user`, `moe_character`, `moe_task`, `moe_screentime` から必要情報を集約し、`mkh_voice` にプリミティブなコンテキストとして渡す。
+`internal/chat` は user、character、task、screentime の情報を取得する interface と、チャット生成に必要なコンテキスト型を自身で定義する。
+`cmd/api` は各 interface の実装を組み立てるだけとし、チャット処理の手順を持たない。
+
+想定する主な interface:
+
+```go
+type LLMClient interface {
+	GenerateReply(ctx context.Context, prompt Prompt) (string, error)
+}
+
+type ContextLoader interface {
+	Load(ctx context.Context, userID string) (ChatContext, error)
+}
+```
+
+LLM プロバイダ固有の API キーやモデル選択をリクエストヘッダから直接受け取らず、サーバー設定と adapter に閉じる。
 
 ## 受け入れ条件
 
@@ -43,7 +58,7 @@ gateway で `moe_user`, `moe_character`, `moe_task`, `moe_screentime` から必�
 - [ ] 選択中キャラの設定に基づく返答テキストが返る。
 - [ ] 未選択キャラなど必要情報が不足している場合は適切なエラーになる。
 - [ ] 返答は共通レスポンス形式で返る。
-- [ ] チャット生成ロジックが gateway ではなく `mkh_voice` 側に閉じている。
+- [ ] チャット生成ロジックが API 層ではなく `internal/chat` に閉じている。
 
 ## API / DB 変更
 
@@ -62,6 +77,7 @@ gateway で `moe_user`, `moe_character`, `moe_task`, `moe_screentime` から必�
 - [ ] 選択中キャラが返答生成に反映されることを確認する。
 - [ ] タスク状況または娯楽時間がコンテキストとして渡ることを確認する。
 - [ ] 必須情報不足時の異常系を確認する。
+- [ ] LLM は fake adapter に差し替えて `go test ./...` で確認できる。
 
 ## 参照ドキュメント
 

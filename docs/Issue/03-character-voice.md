@@ -9,6 +9,7 @@
 
 MVP では、秘書キャラがテキストだけでなく声でも反応することが重要な体験になる。
 キャラごとのボイス設定は `voice_preset_id` を正とし、API では `voiceId` として返す。
+Go アプリケーションは TTS エンジンの実装詳細に依存せず、外部 TTS サービスまたは fake adapter を interface 経由で利用する。
 
 ## 対象範囲
 
@@ -27,15 +28,32 @@ MVP では、秘書キャラがテキストだけでなく声でも反応する�
 
 ## 実装方針
 
-- 対象モジュール: `mkh_voice`, `gateway`
+- 対象モジュール: `voice`, `api`
 - 想定ブランチ: `feature/voice-response-audio`
 - 主な変更ファイル/ディレクトリ:
-  - `packages/voice-library/`
-  - `apps/gateway/gateway/main.py`
+  - `internal/voice/`
+  - `cmd/api/`
 - 依存する Issue: `01-character-selection.md`, `02-character-chat.md`
 - 後続 Issue: `07-chat-logs.md`
 
-ボイス生成は `mkh_voice` の Port / Adapter に閉じ、gateway は選択中キャラと返答テキストを渡すだけにする。
+ボイス生成は `internal/voice` の interface / adapter に閉じ、API 層は選択中キャラの `voice_preset_id` と返答テキストを渡すだけにする。
+既存 Python TTS を利用する場合は別プロセスの TTS サービスとして扱い、Go adapter から HTTP で呼び出す。
+
+想定する主な interface:
+
+```go
+type Synthesizer interface {
+	Synthesize(ctx context.Context, input SynthesisInput) ([]byte, error)
+}
+
+type AudioStorage interface {
+	Save(ctx context.Context, voiceFileID string, audio []byte) (string, error)
+	Open(ctx context.Context, voiceFileID string) (io.ReadCloser, string, error)
+}
+```
+
+TTS 失敗時はチャットテキストの生成・保存を成功として扱い、チャット API の `voiceUrl` は `null` とする。
+単独のボイス生成 API は共通エラー形式で失敗を返す。
 
 ## 受け入れ条件
 
@@ -55,8 +73,8 @@ MVP では、秘書キャラがテキストだけでなく声でも反応する�
 
 ### DB
 
-- 必要に応じて音声ファイル ID、生成元テキスト、キャラ、作成日時を保存する。
-- 保存する場合はチャットログとの関連付けを `07-chat-logs.md` と整合させる。
+- `voice_files` に音声ファイル ID、生成元テキスト、キャラ ID、保存先、作成日時を保存する。
+- チャットログとの関連付けを `07-chat-logs.md` と整合させる。
 
 ## テスト・動作確認
 
@@ -64,6 +82,7 @@ MVP では、秘書キャラがテキストだけでなく声でも反応する�
 - [ ] キャラ別の `voice_preset_id` が使われることを確認する。
 - [ ] 音声取得 API の正常系を確認する。
 - [ ] TTS 失敗時のエラー形式を確認する。
+- [ ] TTS は fake adapter に差し替えて `go test ./...` で確認できる。
 
 ## 参照ドキュメント
 

@@ -8,7 +8,7 @@
 ## 背景
 
 MVP の中核体験である「社長の行動に秘書キャラが反応してくれる」を成立させるため、ユーザごとに使用キャラを決められる必要がある。
-キャラ情報は `moe_character`、選択状態は `moe_user` の責務として扱う。
+キャラ情報は `internal/character`、選択状態は `internal/user` の責務として扱う。
 
 ## 対象範囲
 
@@ -27,12 +27,13 @@ MVP の中核体験である「社長の行動に秘書キャラが反応して�
 
 ## 実装方針
 
-- 対象モジュール: `moe_character`, `moe_user`, `gateway`
+- 対象モジュール: `character`, `user`, `api`
 - 想定ブランチ: `feature/character-selection`
 - 主な変更ファイル/ディレクトリ:
-  - `packages/character/`
-  - `packages/user/`
-  - `apps/gateway/gateway/main.py`
+  - `internal/character/`
+  - `internal/user/`
+  - `cmd/api/`
+  - `migrations/`
 - 依存する Issue: なし
 - 後続 Issue: `02-character-chat.md`, `03-character-voice.md`
 

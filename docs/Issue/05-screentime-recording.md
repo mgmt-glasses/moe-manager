@@ -27,11 +27,12 @@ DB テーブル名は `screentime_records` を正とし、旧表記の `entertai
 
 ## 実装方針
 
-- 対象モジュール: `moe_screentime`, `gateway`
+- 対象モジュール: `screentime`, `api`
 - 想定ブランチ: `feature/screentime-recording`
 - 主な変更ファイル/ディレクトリ:
-  - `packages/screentime/`
-  - `apps/gateway/gateway/main.py`
+  - `internal/screentime/`
+  - `cmd/api/`
+  - `migrations/`
 - 依存する Issue: ユーザ目標時間を扱う場合はユーザ設定 API
 - 後続 Issue: `02-character-chat.md`, `06-statistics-summary.md`
 

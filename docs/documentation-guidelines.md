@@ -54,9 +54,10 @@
 現在の整理済み項目:
 
 - 娯楽時間 DB テーブル名は `screentime_records` を正とする（旧表記 `entertainment_records` / `entertainment_times` は使わない）。
-- ボイス設定の domain/DB 名は `voice_preset_id` を正とし、API では `voiceId` として返す。変換は `adapters/inbound/api/` で行う。
+- ボイス設定の domain/DB 名は `voice_preset_id` を正とし、API では `voiceId` として返す。変換は HTTP handler に閉じる。
 - 統計は MVP では専用テーブルを持たず、都度計算を正とする（`detail/仕様書.md` 5.5節の統計テーブル記述は読み替え対象）。
 - 「Phase」は文書により意味が違うため、`implementation-guide.md` ではモジュール対応と API 実装順を分けて扱う。
+- MVP バックエンドの実装言語は Go とする。`detail/ARCHITECTURE.md` と `detail/Rule.md` の Python / FastAPI 構成は旧設計として扱う。
 
 ## 整理ルール
 

@@ -11,6 +11,25 @@ PRD/TRD の詳細を再掲せず、実装ブランチを切る前に確認する
 - ブランチは `develop` から切り、`feature/<module>-<feature>` 形式にする。
 - 実装中に仕様や設計判断が変わった場合は、関連する方針ドキュメントも同じ PR で更新する。
 
+## Go 実装方針
+
+- MVP バックエンドの使用言語は Go とする。
+- 実行エントリポイントと依存性注入は `cmd/api/` に置く。
+- ドメインごとのモデル、ユースケース、interface、adapter は `internal/<domain>/` に置く。
+- ドメイン間で実装型を直接参照せず、`user_id` や集計値など必要最小限の値を渡す。
+- DB、LLM、TTS、ファイルストレージは interface の背後に置き、テストでは fake に差し替える。
+- 既存の Python 実装はプロトタイプとして参照してよいが、Go の domain から直接 import・実行しない。
+- Python 製 TTS を継続利用する場合は、HTTP 等の明示的な外部サービス境界を設ける。
+
+基本配置:
+
+```txt
+cmd/api/                    # HTTP サーバー起動、ルーティング、依存性注入
+internal/<domain>/          # domain / use case / interface
+internal/<domain>/adapter/  # PostgreSQL、外部 API 等の実装
+migrations/                 # PostgreSQL マイグレーション
+```
+
 ## Issue 一覧
 
 | ファイル | 対象機能 |

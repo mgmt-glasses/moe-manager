@@ -35,7 +35,7 @@ hotfix/<description>
 
 - `feature/task-crud-api`
 - `feature/character-mbti-selection`
-- `feature/gateway-router-setup`
+- `feature/api-router-setup`
 - `fix/screentime-date-calculation`
 - `hotfix/auth-error`
 
@@ -69,8 +69,11 @@ Conventional Commits に準拠します。
 | `task` | タスク管理 |
 | `screentime` | スクリーンタイム管理 |
 | `statistics` | 統計管理 |
-| `voice` | ボイス・チャット |
-| `gateway` | 統合 API |
+| `chat` | AI チャット・チャットログ |
+| `voice` | ボイス生成・音声ファイル |
+| `api` | 統合 API・依存性注入 |
+
+`gateway` は旧 Python 構成の scope として扱い、新規 Go 実装では使用しません。
 
 例:
 
@@ -87,7 +90,7 @@ docs: MVP仕様書を整理
 - マージは Squash Merge を基本とする。
 - マージ後の feature ブランチは削除する。
 - 変更行数は 300 行以内を目安にする。
-- 大きくなる場合は、domain、adapter、gateway 統合などに分割する。
+- 大きくなる場合は、domain、adapter、API 統合などに分割する。
 - 実装途中でも Draft PR を活用して早めにレビューを受ける。
 
 PR には以下を書く。
@@ -106,8 +109,8 @@ PR には以下を書く。
 - 仕様通りに動作するか
 - domain が adapter や外部サービスに依存していないか
 - 他モジュールの内部実装を直接 import していないか
-- 新しい外部連携に Port が定義されているか
-- Adapter が適切な `adapters/` 配下に置かれているか
+- 新しい外部連携に interface が定義されているか
+- adapter が適切な `internal/<domain>/adapter/` 配下に置かれているか
 - 変更に対するテスト、または動作確認があるか
 - 既存機能への影響範囲が説明されているか
 

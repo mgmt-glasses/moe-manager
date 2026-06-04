@@ -1,31 +1,34 @@
 # アーキテクチャ方針
 
 このドキュメントは、Moe Manager の設計判断と依存ルールをまとめます。
-詳細なディレクトリ構成は既存の `detail/ARCHITECTURE.md` も参照してください。
+MVP バックエンドの使用言語は Go とします。
+`detail/ARCHITECTURE.md` に残る Python / FastAPI 構成は旧設計として扱い、移行時の参考に限定します。
 
 ## 採用アーキテクチャ
 
 Moe Manager は、モジュラーモノリスとヘキサゴナルアーキテクチャを採用します。
 
-- 単一リポジトリ、単一デプロイを前提にする。
-- 機能ごとに `packages/` 配下の独立パッケージとして分ける。
+- Go アプリケーションは単一リポジトリ、単一デプロイを前提にする。PostgreSQL、LLM、TTS などの外部サービスはこの単一デプロイに含めない。
+- 機能ごとに `internal/` 配下の独立パッケージとして分ける。
 - 各パッケージ内では domain を中心に置き、外部依存を adapter に閉じ込める。
-- DB、LLM、TTS などの外部依存は Port を通して扱う。
+- DB、LLM、TTS などの外部依存は interface を通して扱う。
 
 ## 全体構成
 
 ```txt
 moe-manager/
-├── apps/
-│   └── gateway/          # 各モジュールを束ねる FastAPI アプリケーション
-├── packages/
+├── cmd/
+│   └── api/              # HTTP サーバー起動、ルーティング、依存性注入
+├── internal/
 │   ├── user/             # ユーザ管理
 │   ├── character/        # キャラ管理
 │   ├── task/             # タスク管理
 │   ├── screentime/       # スクリーンタイム管理
 │   ├── statistics/       # 統計管理
-│   └── voice-library/    # ボイス・チャット（パッケージ名は mkh_voice）
-└── pyproject.toml        # uv workspace 定義
+│   ├── chat/             # AI チャット、チャットログ
+│   └── voice/            # TTS 音声生成、音声ファイル管理
+├── migrations/           # PostgreSQL マイグレーション
+└── go.mod
 ```
 
 ## モジュール内構成
@@ -33,92 +36,74 @@ moe-manager/
 各モジュールは以下の構成を基本とします。
 
 ```txt
-packages/<module>/moe_<module>/
-├── domain/
-│   ├── models.py         # エンティティ、値オブジェクト、Enum
-│   ├── ports.py          # Protocol による抽象インターフェース
-│   └── use_cases.py      # ビジネスロジック
-└── adapters/
-    ├── inbound/
-    │   └── api/
-    │       └── <module>_router.py
-    └── outbound/
-        └── repositories/
-            └── postgres_<module>_repository.py
+internal/<module>/
+├── model.go              # エンティティ、値オブジェクト
+├── service.go            # ユースケース
+├── repository.go         # DB 等の interface
+├── handler.go            # HTTP handler
+└── adapter/
+    ├── postgres.go       # PostgreSQL 実装
+    └── external.go       # LLM / TTS 等の外部 API 実装
 ```
 
-`voice-library` のみパッケージ名が `mkh_voice` となっており、他モジュールの命名規則（`moe_<module>`）と異なります。
-
-```txt
-packages/voice-library/mkh_voice/
-├── domain/               # models / ports / use_cases / chat_use_cases
-└── adapters/
-    ├── inbound/api/      # chat_router
-    └── outbound/         # llm / repositories / tts_engine
-```
+ファイルは責務に応じて分割してよく、上記のファイル名へ固定しません。
+interface は利用側パッケージに定義し、実装詳細を domain/service から切り離します。
 
 ## 依存方向
 
 依存方向は常に外側から内側へ向けます。
 
 ```txt
-adapter -> use_cases -> ports / models
+handler / adapter -> service -> interface / model
 ```
 
 | レイヤー | 依存してよいもの | 依存してはいけないもの |
 | --- | --- | --- |
-| `domain/models.py` | 標準ライブラリ、Pydantic | ports, use_cases, adapters, 他モジュール |
-| `domain/ports.py` | models | use_cases, adapters, 他モジュール |
-| `domain/use_cases.py` | models, ports | adapters, 他モジュール |
-| `adapters/inbound/` | domain | outbound adapters |
-| `adapters/outbound/` | domain/models, domain/ports | inbound adapters, use_cases |
+| model / service | Go 標準ライブラリ、自パッケージの interface | HTTP、DB driver、外部 API SDK、他ドメインの実装型 |
+| handler | service、API DTO | DB や外部 API の具体実装 |
+| adapter | model、interface、外部ライブラリ | handler |
+| `cmd/api` | 各パッケージの公開 API、adapter | ビジネスロジック |
 
 ## モジュール境界
 
 - モジュール間で内部実装を直接 import しない。
 - domain から別モジュールの domain を直接参照しない。
 - `user_id` や `character_id` などの識別子は primitive として受け渡す。
-- モジュール間の組み合わせは gateway 層で行う。
-- 共通型が必要になった場合は、`packages/shared` などの共通パッケージを検討する。
+- 複数ドメインをまたぐユースケースは、その処理を所有する `internal/<domain>` に置き、依存先を interface として定義する。
+- `cmd/api` は依存性注入に徹し、ビジネスロジックを持たない。
+- 共通型が必要になった場合のみ `internal/shared` などの共通パッケージを検討する。
 
-例外として、`moe_statistics` は集計のために `tasks` と `screentime_records` を読む必要があります。
-この場合も他モジュールの domain や use case を直接 import せず、`moe_statistics` 側の Query Port と outbound adapter で集計クエリを扱います。
-gateway は統計 API のルーティングと依存性注入を担当し、集計ロジックは持ちません。
+例外として、`internal/statistics` は集計のために `tasks` と `screentime_records` を読む必要があります。
+この場合も他モジュールの実装型を直接参照せず、`internal/statistics` 側の Query interface と adapter で集計クエリを扱います。
+`cmd/api` は統計 API のルーティングと依存性注入を担当し、集計ロジックは持ちません。
 
 実装パターン:
 
-```python
-# moe_statistics/domain/ports.py
-class StatisticsQueryPort(Protocol):
-    def get_daily_stats(self, user_id: str, date: date) -> DailyStats: ...
-
-# moe_statistics/adapters/outbound/repositories/postgres_statistics_repository.py
-class PostgresStatisticsRepository:
-    def get_daily_stats(self, user_id: str, date: date) -> DailyStats:
-        # tasks と screentime_records を直接 JOIN してよい（同一データベース内）
-        ...
+```go
+type StatisticsQuery interface {
+	GetDailyStats(ctx context.Context, userID string, date time.Time) (DailyStats, error)
+}
 ```
 
-`moe_statistics` の outbound adapter は `tasks` / `screentime_records` テーブルを直接クエリします。
-他モジュールのクラスは import せず、テーブル名だけを知ります。
+`internal/statistics` の Query adapter は `tasks` / `screentime_records` テーブルを直接クエリします。
+他モジュールの実装型は import せず、テーブル名だけを知ります。
 
-## gateway の責務
+## `cmd/api` の責務
 
-`apps/gateway` は、各モジュールの API ルーターを束ねる統合エントリポイントです。
+`cmd/api` は、各モジュールを束ねる統合エントリポイントです。
 
 - ルーティングと依存性注入を担当する。
 - ビジネスロジックを持たない。
-- 複数モジュールをまたぐ処理は、gateway 層で組み合わせる。
+- 複数モジュールをまたぐ処理に必要な interface と adapter を組み合わせる。
 - モジュール内の repository 実装詳細を他モジュールへ漏らさない。
 
-## voice-library との関係
+## チャット・TTS との関係
 
-`voice-library` は、チャットと音声生成を担う既存ライブラリです。
-
-- `mkh_voice.domain.use_cases.VoiceGenerationUseCase` が音声生成の入口。
-- `mkh_voice.domain.chat_use_cases.ChatUseCase` が対話・心情推論の入口。
-- domain 内部では `voice_preset_id` を voice-library の `VoicePreset.id` と対応させる。
-- API ではフロントエンド向けに `voiceId` として返してよい。`voice_preset_id` → `voiceId` の変換は `adapters/inbound/api/` で行う。
-- DB 設計書の `voice_key` は旧表記として扱い、実装時は `voice_preset_id` に寄せる。
+- チャット生成とログ管理は `internal/chat` が担う。
+- 音声生成と音声ファイル管理は `internal/voice` が担う。
+- LLM と TTS は interface の背後に置く。
+- Python 製 TTS を利用する場合は別サービスとして起動し、Go adapter から HTTP 等で接続する。
+- domain 内部では `voice_preset_id` を正とし、API では `voiceId` として返してよい。
+- DB 設計書の `voice_key` は旧表記として扱う。
 
 チャット時は、ユーザ設定、キャラ設定、タスク状況、娯楽時間、直近ログを組み合わせて、LLM 応答と TTS 音声生成につなげます。

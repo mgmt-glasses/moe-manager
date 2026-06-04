@@ -20,9 +20,5 @@ func (s *Service) List(ctx context.Context) ([]Character, error) {
 }
 
 func (s *Service) FindByID(ctx context.Context, id string) (Character, error) {
-	c, err := s.repo.FindByID(ctx, id)
-	if err != nil {
-		return Character{}, ErrNotFound
-	}
-	return c, nil
+	return s.repo.FindByID(ctx, id)
 }

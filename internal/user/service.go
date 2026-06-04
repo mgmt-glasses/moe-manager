@@ -71,11 +71,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (User, error) {
 }
 
 func (s *Service) FindByID(ctx context.Context, id string) (User, error) {
-	u, err := s.repo.FindByID(ctx, id)
-	if err != nil {
-		return User{}, ErrNotFound
-	}
-	return u, nil
+	return s.repo.FindByID(ctx, id)
 }
 
 type UpdateInput struct {
@@ -88,7 +84,7 @@ type UpdateInput struct {
 func (s *Service) Update(ctx context.Context, id string, in UpdateInput) (User, error) {
 	u, err := s.repo.FindByID(ctx, id)
 	if err != nil {
-		return User{}, ErrNotFound
+		return User{}, err
 	}
 
 	if in.Name != nil {
@@ -130,7 +126,7 @@ func (s *Service) Update(ctx context.Context, id string, in UpdateInput) (User, 
 func (s *Service) UpdateSelectedCharacter(ctx context.Context, userID, characterID string) (User, error) {
 	u, err := s.repo.FindByID(ctx, userID)
 	if err != nil {
-		return User{}, ErrNotFound
+		return User{}, err
 	}
 
 	ok, err := s.charValid.Exists(ctx, characterID)

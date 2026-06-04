@@ -1,11 +1,11 @@
 package character
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/mgmt-glasses/moe-manager/internal/shared"
 )
 
 type Handler struct {
@@ -14,31 +14,6 @@ type Handler struct {
 
 func NewHandler(svc *Service) *Handler {
 	return &Handler{svc: svc}
-}
-
-type apiResponse struct {
-	Success bool      `json:"success"`
-	Data    any       `json:"data"`
-	Error   *apiError `json:"error"`
-}
-
-type apiError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
-}
-
-func writeError(w http.ResponseWriter, status int, code, message string) {
-	writeJSON(w, status, apiResponse{
-		Success: false,
-		Data:    nil,
-		Error:   &apiError{Code: code, Message: message},
-	})
 }
 
 type characterListItem struct {
@@ -101,7 +76,7 @@ func toDetail(c Character) characterDetail {
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	chars, err := h.svc.List(r.Context())
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "キャラ一覧の取得に失敗しました")
+		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "キャラ一覧の取得に失敗しました")
 		return
 	}
 
@@ -109,7 +84,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	for i, c := range chars {
 		items[i] = toListItem(c)
 	}
-	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: items})
+	shared.WriteJSON(w, http.StatusOK, shared.Response{Success: true, Data: items})
 }
 
 func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -118,12 +93,12 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 	c, err := h.svc.FindByID(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
-			writeError(w, http.StatusNotFound, "NOT_FOUND", "キャラクターが見つかりません")
+			shared.WriteError(w, http.StatusNotFound, "NOT_FOUND", "キャラクターが見つかりません")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "キャラ詳細の取得に失敗しました")
+		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "キャラ詳細の取得に失敗しました")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: toDetail(c)})
+	shared.WriteJSON(w, http.StatusOK, shared.Response{Success: true, Data: toDetail(c)})
 }

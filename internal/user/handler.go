@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/mgmt-glasses/moe-manager/internal/shared"
 )
 
 type Handler struct {
@@ -14,31 +15,6 @@ type Handler struct {
 
 func NewHandler(svc *Service) *Handler {
 	return &Handler{svc: svc}
-}
-
-type apiResponse struct {
-	Success bool      `json:"success"`
-	Data    any       `json:"data"`
-	Error   *apiError `json:"error"`
-}
-
-type apiError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
-}
-
-func writeError(w http.ResponseWriter, status int, code, message string) {
-	writeJSON(w, status, apiResponse{
-		Success: false,
-		Data:    nil,
-		Error:   &apiError{Code: code, Message: message},
-	})
 }
 
 type userResponse struct {
@@ -71,7 +47,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		SelectedCharacterID        *string `json:"selectedCharacterId"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_BODY", "リクエストボディが正しくありません")
+		shared.WriteError(w, http.StatusBadRequest, "INVALID_BODY", "リクエストボディが正しくありません")
 		return
 	}
 
@@ -84,16 +60,16 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrBadInput):
-			writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+			shared.WriteError(w, http.StatusBadRequest, "VALIDATION_ERROR", "入力内容が正しくありません")
 		case errors.Is(err, ErrCharacterNotFound):
-			writeError(w, http.StatusBadRequest, "CHARACTER_NOT_FOUND", "指定したキャラクターが存在しません")
+			shared.WriteError(w, http.StatusBadRequest, "CHARACTER_NOT_FOUND", "指定したキャラクターが存在しません")
 		default:
-			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "ユーザの作成に失敗しました")
+			shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "ユーザの作成に失敗しました")
 		}
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, apiResponse{Success: true, Data: toResponse(u)})
+	shared.WriteJSON(w, http.StatusCreated, shared.Response{Success: true, Data: toResponse(u)})
 }
 
 func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -102,14 +78,14 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 	u, err := h.svc.FindByID(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
-			writeError(w, http.StatusNotFound, "NOT_FOUND", "ユーザが見つかりません")
+			shared.WriteError(w, http.StatusNotFound, "NOT_FOUND", "ユーザが見つかりません")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "ユーザ情報の取得に失敗しました")
+		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "ユーザ情報の取得に失敗しました")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: toResponse(u)})
+	shared.WriteJSON(w, http.StatusOK, shared.Response{Success: true, Data: toResponse(u)})
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +98,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		SelectedCharacterID        *string `json:"selectedCharacterId"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_BODY", "リクエストボディが正しくありません")
+		shared.WriteError(w, http.StatusBadRequest, "INVALID_BODY", "リクエストボディが正しくありません")
 		return
 	}
 
@@ -135,18 +111,18 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrNotFound):
-			writeError(w, http.StatusNotFound, "NOT_FOUND", "ユーザが見つかりません")
+			shared.WriteError(w, http.StatusNotFound, "NOT_FOUND", "ユーザが見つかりません")
 		case errors.Is(err, ErrBadInput):
-			writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", err.Error())
+			shared.WriteError(w, http.StatusBadRequest, "VALIDATION_ERROR", "入力内容が正しくありません")
 		case errors.Is(err, ErrCharacterNotFound):
-			writeError(w, http.StatusBadRequest, "CHARACTER_NOT_FOUND", "指定したキャラクターが存在しません")
+			shared.WriteError(w, http.StatusBadRequest, "CHARACTER_NOT_FOUND", "指定したキャラクターが存在しません")
 		default:
-			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "ユーザ設定の更新に失敗しました")
+			shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "ユーザ設定の更新に失敗しました")
 		}
 		return
 	}
 
-	writeJSON(w, http.StatusOK, apiResponse{Success: true, Data: toResponse(u)})
+	shared.WriteJSON(w, http.StatusOK, shared.Response{Success: true, Data: toResponse(u)})
 }
 
 func (h *Handler) UpdateSelectedCharacter(w http.ResponseWriter, r *http.Request) {
@@ -156,11 +132,11 @@ func (h *Handler) UpdateSelectedCharacter(w http.ResponseWriter, r *http.Request
 		CharacterID string `json:"characterId"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeError(w, http.StatusBadRequest, "INVALID_BODY", "リクエストボディが正しくありません")
+		shared.WriteError(w, http.StatusBadRequest, "INVALID_BODY", "リクエストボディが正しくありません")
 		return
 	}
 	if body.CharacterID == "" {
-		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "characterId は必須です")
+		shared.WriteError(w, http.StatusBadRequest, "VALIDATION_ERROR", "characterId は必須です")
 		return
 	}
 
@@ -168,16 +144,16 @@ func (h *Handler) UpdateSelectedCharacter(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrNotFound):
-			writeError(w, http.StatusNotFound, "NOT_FOUND", "ユーザが見つかりません")
+			shared.WriteError(w, http.StatusNotFound, "NOT_FOUND", "ユーザが見つかりません")
 		case errors.Is(err, ErrCharacterNotFound):
-			writeError(w, http.StatusBadRequest, "CHARACTER_NOT_FOUND", "指定したキャラクターが存在しません")
+			shared.WriteError(w, http.StatusBadRequest, "CHARACTER_NOT_FOUND", "指定したキャラクターが存在しません")
 		default:
-			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "選択キャラの更新に失敗しました")
+			shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "選択キャラの更新に失敗しました")
 		}
 		return
 	}
 
-	writeJSON(w, http.StatusOK, apiResponse{
+	shared.WriteJSON(w, http.StatusOK, shared.Response{
 		Success: true,
 		Data: map[string]string{
 			"userId":              u.ID,

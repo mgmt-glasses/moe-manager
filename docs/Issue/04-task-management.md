@@ -33,7 +33,7 @@ MVP では、秘書キャラがユーザの行動に反応するための主要�
 - 主な変更ファイル/ディレクトリ:
   - `internal/task/`
   - `cmd/api/`
-  - `migrations/`
+  - `prisma/migrations/`
 - 依存する Issue: なし
 - 後続 Issue: `02-character-chat.md`, `06-statistics-summary.md`
 

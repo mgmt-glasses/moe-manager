@@ -33,7 +33,7 @@ MVP の中核体験である「社長の行動に秘書キャラが反応して�
   - `internal/character/`
   - `internal/user/`
   - `cmd/api/`
-  - `migrations/`
+  - `prisma/migrations/`
 - 依存する Issue: なし
 - 後続 Issue: `02-character-chat.md`, `03-character-voice.md`
 

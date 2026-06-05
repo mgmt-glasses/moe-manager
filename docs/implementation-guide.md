@@ -82,8 +82,9 @@ API の優先実装順は [API 方針](api-guidelines.md) を参照します。
 - 全モジュールが同一データベースを参照する。
 - マスターデータとユーザデータを分ける。
 - 統計は MVP では原則として都度計算する。
-- スキーマ変更はマイグレーションファイルで管理する。
+- スキーマ変更は Prisma migration で管理する。
 - 娯楽時間の DB テーブル名は現行実装に合わせて `screentime_records` を正とする。
+- Prisma Client の導入や repository adapter 実装は各機能 Issue で判断し、domain/use case から Prisma Client を直接参照しない。
 
 接続情報は環境変数 `DATABASE_URL` で渡す:
 

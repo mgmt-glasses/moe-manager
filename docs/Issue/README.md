@@ -27,7 +27,7 @@ PRD/TRD の詳細を再掲せず、実装ブランチを切る前に確認する
 cmd/api/                    # HTTP サーバー起動、ルーティング、依存性注入
 internal/<domain>/          # domain / use case / interface
 internal/<domain>/adapter/  # PostgreSQL、外部 API 等の実装
-migrations/                 # PostgreSQL マイグレーション
+prisma/migrations/          # Prisma による PostgreSQL マイグレーション
 ```
 
 ## Issue 一覧
@@ -41,6 +41,7 @@ migrations/                 # PostgreSQL マイグレーション
 | `05-screentime-recording.md` | スクリーンタイム、または娯楽時間を記録できる |
 | `06-statistics-summary.md` | タスク達成状況と娯楽時間を統計として確認できる |
 | `07-chat-logs.md` | チャットログを確認できる |
+| `08-prisma-migration-management.md` | Prisma で DB マイグレーションを管理できる |
 
 ## テンプレート
 

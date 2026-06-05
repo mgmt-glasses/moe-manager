@@ -9,8 +9,8 @@ DB は、ユーザ設定、タスク、娯楽時間、チャット履歴を永�
 ## 基本方針
 
 - MVP では PostgreSQL を採用する。
-- 開発速度と本番環境との一貫性を優先する。ローカル開発では Docker で PostgreSQL を起動する。
-- スキーマ変更はマイグレーションファイルで管理する。
+- 開発速度と本番環境との一貫性を優先する。ローカル開発では Docker で PostgreSQL を起動できる手順を用意する。
+- スキーマ変更は Prisma migration で管理する。
 - キャラクター定義などのマスターデータと、タスクやログなどのユーザデータを分ける。
 - MVP では専用の統計テーブルを持たず、タスクや娯楽時間の記録から都度計算する。
 - チャットログは、AI が参照しやすい粒度で保存する。
@@ -56,21 +56,23 @@ DB は、ユーザ設定、タスク、娯楽時間、チャット履歴を永�
 
 ## マイグレーション計画
 
-初期マイグレーションは以下の粒度を基本とします。
+初期マイグレーションは `prisma/migrations/` に作成し、以下のテーブルを作成します。
 
-1. `001_init_master_and_user.sql`
-   - `characters`, `users` の作成
-   - 初期キャラデータの投入
-2. `002_init_task_and_activity.sql`
-   - `tasks`, `screentime_records` の作成
-3. `003_init_logs.sql`
-   - `chat_logs`, `voice_files` の作成
+- `characters`, `users`
+- `tasks`, `screentime_records`
+- `chat_logs`, `voice_files`
+
+初期キャラクターデータは migration ではなく seed script で投入します。
+`screentime_records(user_id, date)` は同一ユーザ・同一日の重複を避けるため unique 制約を付けます。
+MVP のタスク削除は物理削除とし、初期 schema には `deleted_at` を含めません。
+長期記憶、会話要約、好感度、関係性 state、ユーザプロファイル抽出用のテーブルは MVP 初期 schema には含めません。
 
 ## マイグレーション実行方法
 
-マイグレーションは `migrations/` の SQL ファイルを Go アプリケーションまたは専用 CLI から順番に適用します。
-採用するライブラリは Go 基盤作成時に決定し、全 Issue で同じ方法を使用します。
-アプリケーションの domain/service からマイグレーションを実行せず、`cmd/api` の起動処理または専用コマンドに閉じます。
+マイグレーションは Prisma CLI から適用します。
+開発環境では `prisma migrate dev` 相当、CI や検証環境では `prisma migrate deploy` 相当のコマンドを使用します。
+アプリケーションの domain/service からマイグレーションを実行しません。
+Prisma Client の導入や repository adapter 実装は各機能 Issue で判断し、domain/use case から Prisma Client を直接参照しません。
 
 ## 将来の DB 移行
 

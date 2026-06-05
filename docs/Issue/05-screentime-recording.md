@@ -32,7 +32,7 @@ DB テーブル名は `screentime_records` を正とし、旧表記の `entertai
 - 主な変更ファイル/ディレクトリ:
   - `internal/screentime/`
   - `cmd/api/`
-  - `migrations/`
+  - `prisma/migrations/`
 - 依存する Issue: ユーザ目標時間を扱う場合はユーザ設定 API
 - 後続 Issue: `02-character-chat.md`, `06-statistics-summary.md`
 

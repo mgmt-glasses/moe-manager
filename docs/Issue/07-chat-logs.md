@@ -34,7 +34,7 @@ MVP では、秘書キャラとの対面ログを振り返れることが体験�
   - `internal/chat/`
   - `internal/chat/adapter/`
   - `cmd/api/`
-  - `migrations/`
+  - `prisma/migrations/`
 - 依存する Issue: `02-character-chat.md`
 - 後続 Issue: なし
 

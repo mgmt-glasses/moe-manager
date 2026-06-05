@@ -27,7 +27,8 @@ moe-manager/
 │   ├── statistics/       # 統計管理
 │   ├── chat/             # AI チャット、チャットログ
 │   └── voice/            # TTS 音声生成、音声ファイル管理
-├── migrations/           # PostgreSQL マイグレーション
+├── prisma/
+│   └── migrations/       # Prisma による PostgreSQL マイグレーション
 └── go.mod
 ```
 

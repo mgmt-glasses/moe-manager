@@ -134,6 +134,12 @@ DB内のデータは以下のカテゴリに分類する。
 
 ## 9. マイグレーション計画
 
-1. **001_init_master_and_user.sql**: `characters`, `users` の作成と初期キャラデータの投入。
-2. **002_init_task_and_activity.sql**: `tasks`, `screentime_records` の作成。
-3. **003_init_logs.sql**: `chat_logs`, `voice_files` の作成。
+Prisma を使用して PostgreSQL の schema と migration 履歴を管理する。
+初期 migration は `characters`, `users`, `tasks`, `screentime_records`, `chat_logs`, `voice_files` を作成する。
+初期キャラデータは migration ではなく seed script で投入する。
+
+制約:
+
+- `screentime_records(user_id, date)` は同一ユーザ・同一日の重複を避けるため unique とする。
+- MVP のタスク削除は物理削除とし、初期 schema には `deleted_at` を含めない。
+- 長期記憶、会話要約、好感度、関係性 state、ユーザプロファイル抽出用のテーブルは MVP 初期 schema には含めない。

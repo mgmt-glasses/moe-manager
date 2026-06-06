@@ -1,12 +1,20 @@
-from sqlalchemy import create_engine, Column, String, Integer, Date, desc
+from sqlalchemy import create_engine, Column, String, Integer, Date, desc, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 from datetime import date
 from typing import Optional
 
-from moe_screentime.domain.models import ScreenTimeRecord
+from moe_screentime.domain.models import ScreenTimeRecord, ScreenTimeCategoryUsage
 
 Base = declarative_base()
+
+class ScreenTimeCategoryModel(Base):
+    __tablename__ = "screentime_categories"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    record_id = Column(String, ForeignKey("screentime_records.record_id"), nullable=False)
+    category = Column(String, nullable=False)
+    minutes = Column(Integer, nullable=False)
+
 
 class ScreenTimeModel(Base):
     __tablename__ = "screentime_records"
@@ -15,6 +23,9 @@ class ScreenTimeModel(Base):
     date = Column(Date, nullable=False)
     entertainment_minutes = Column(Integer, nullable=False)
     target_minutes = Column(Integer, nullable=False)
+    
+    categories = relationship("ScreenTimeCategoryModel", cascade="all, delete-orphan", backref="record")
+
 
 class SQLiteScreenTimeRepository:
     def __init__(self, db_path: str = "data/moe.db"):
@@ -34,20 +45,32 @@ class SQLiteScreenTimeRepository:
                 .one_or_none()
             )
             if existing is None:
-                session.add(
-                    ScreenTimeModel(
-                        record_id=record.record_id,
-                        user_id=record.user_id,
-                        date=record.date,
-                        entertainment_minutes=record.entertainment_minutes,
-                        target_minutes=record.target_minutes,
-                    )
+                new_model = ScreenTimeModel(
+                    record_id=record.record_id,
+                    user_id=record.user_id,
+                    date=record.date,
+                    entertainment_minutes=record.entertainment_minutes,
+                    target_minutes=record.target_minutes,
                 )
+                for cat in record.categories:
+                    new_model.categories.append(ScreenTimeCategoryModel(
+                        category=cat.category,
+                        minutes=cat.minutes
+                    ))
+                session.add(new_model)
             else:
                 if record.record_id:
                     existing.record_id = record.record_id
                 existing.entertainment_minutes = record.entertainment_minutes
                 existing.target_minutes = record.target_minutes
+                
+                # カテゴリを全消しして再登録する (簡易upsert)
+                existing.categories.clear()
+                for cat in record.categories:
+                    existing.categories.append(ScreenTimeCategoryModel(
+                        category=cat.category,
+                        minutes=cat.minutes
+                    ))
             session.commit()
         finally:
             session.close()
@@ -99,10 +122,16 @@ class SQLiteScreenTimeRepository:
             session.close()
 
     def _to_record(self, model: ScreenTimeModel) -> ScreenTimeRecord:
+        categories = [
+            ScreenTimeCategoryUsage(category=cat.category, minutes=cat.minutes)
+            for cat in model.categories
+        ]
         return ScreenTimeRecord(
             record_id=model.record_id,
             user_id=model.user_id,
             date=model.date,
             entertainment_minutes=model.entertainment_minutes,
             target_minutes=model.target_minutes,
+            categories=categories
         )
+

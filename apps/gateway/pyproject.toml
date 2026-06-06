@@ -20,3 +20,11 @@ packages = ["gateway"]
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.uv.sources]
+moe-user = { workspace = true }
+moe-character = { workspace = true }
+moe-task = { workspace = true }
+moe-screentime = { workspace = true }
+moe-statistics = { workspace = true }
+voice-library = { workspace = true }

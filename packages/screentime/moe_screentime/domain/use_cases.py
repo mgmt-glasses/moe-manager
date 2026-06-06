@@ -1,8 +1,8 @@
 from datetime import date
 from typing import Optional
 
-from .models import ScreenTimeRecord
-from .ports import ScreenTimeRepositoryPort
+from .models import ScreenTimeRecord, ScreenTimeAnalysisResult
+from .ports import ScreenTimeRepositoryPort, ScreenTimeImageAnalyzerPort
 
 
 class ScreenTimeUseCase:
@@ -28,3 +28,12 @@ class ScreenTimeUseCase:
     def get_weekly_summary(self, user_id: str) -> list[ScreenTimeRecord]:
         """直近7日分の娯楽時間を取得する。"""
         return self._repository.list_recent(user_id, days=7)
+
+
+class ScreenTimeImageAnalysisUseCase:
+    def __init__(self, analyzer: ScreenTimeImageAnalyzerPort):
+        self._analyzer = analyzer
+
+    def analyze(self, image_bytes: bytes, mime_type: str = "image/png") -> ScreenTimeAnalysisResult:
+        """画像を解析してスクリーンタイムのカテゴリ別利用時間を抽出する"""
+        return self._analyzer.analyze(image_bytes=image_bytes, mime_type=mime_type)

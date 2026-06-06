@@ -150,3 +150,7 @@ cython_debug/
 # uv
 .uv_cache/
 .uv_python/
+
+# Local databases
+*.db
+data/

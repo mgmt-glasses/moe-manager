@@ -8,6 +8,7 @@ dependencies = [
     "sqlalchemy",
     "fastapi",
     "google-genai",
+    "psycopg2-binary",
 ]
 
 [tool.setuptools]

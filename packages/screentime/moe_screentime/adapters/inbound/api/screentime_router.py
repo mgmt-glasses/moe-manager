@@ -7,8 +7,8 @@ from typing import Any, Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from pydantic import BaseModel, Field
 
-from moe_screentime.adapters.outbound.repositories.sqlite_screentime_repository import (
-    SQLiteScreenTimeRepository,
+from moe_screentime.adapters.outbound.repositories.postgres_screentime_repository import (
+    PostgresScreenTimeRepository,
 )
 from moe_screentime.adapters.outbound.llm.gemini_image_analyzer import GeminiImageAnalyzer
 from moe_screentime.domain.models import ScreenTimeRecord, ScreenTimeCategoryUsage
@@ -34,7 +34,7 @@ def _error(code: str, message: str) -> dict:
 # ---------------------------------------------------------------------------
 
 def get_use_case() -> ScreenTimeUseCase:
-    repository = SQLiteScreenTimeRepository()
+    repository = PostgresScreenTimeRepository()
     return ScreenTimeUseCase(repository=repository)
 
 def get_image_analysis_use_case() -> ScreenTimeImageAnalysisUseCase:

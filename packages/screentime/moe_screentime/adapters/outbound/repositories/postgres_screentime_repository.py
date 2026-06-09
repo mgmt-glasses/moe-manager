@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import create_engine, Column, String, Integer, Date, desc, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
@@ -27,9 +28,13 @@ class ScreenTimeModel(Base):
     categories = relationship("ScreenTimeCategoryModel", cascade="all, delete-orphan", backref="record")
 
 
-class SQLiteScreenTimeRepository:
-    def __init__(self, db_path: str = "data/moe.db"):
-        self.engine = create_engine(f"sqlite:///{db_path}")
+class PostgresScreenTimeRepository:
+    def __init__(self, db_url: Optional[str] = None):
+        if db_url is None:
+            # DATABASE_URL が設定されていない場合はエラーを出すか、とりあえずローカルのPostgreSQL URLを入れる
+            db_url = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/moe")
+            
+        self.engine = create_engine(db_url)
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
 
@@ -134,4 +139,3 @@ class SQLiteScreenTimeRepository:
             target_minutes=model.target_minutes,
             categories=categories
         )
-

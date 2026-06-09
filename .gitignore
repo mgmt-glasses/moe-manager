@@ -150,3 +150,19 @@ cython_debug/
 # uv
 .uv_cache/
 .uv_python/
+uv.lock
+
+# Optional AI development-management kit
+template/
+.claude/commands/
+.claude/settings.json
+.claude/skills/
+.github/ISSUE_TEMPLATE/
+.github/workflows/repo-readiness.yml
+docs/dev-ops/
+docs/development-setup.md
+docs/implementation-notes/
+docs/reviews/
+docs/test-reviews/
+docs/lessons-learned.md
+scripts/check-repo-readiness.sh

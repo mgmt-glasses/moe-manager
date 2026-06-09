@@ -12,14 +12,15 @@ var ErrNoCharacterSelected = errors.New("no character selected")
 
 // Service handles chat message generation.
 type Service struct {
-	llm    LLMClient
-	loader ContextLoader
-	logger ChatLogger // nil means no persistence
+	llm     LLMClient
+	loader  ContextLoader
+	persona PersonaRepository // nil until GCP PoC completes (issue 02)
+	logger  ChatLogger        // nil means no persistence
 }
 
-// NewService creates a Service. logger may be nil to skip persistence.
-func NewService(llm LLMClient, loader ContextLoader, logger ChatLogger) *Service {
-	return &Service{llm: llm, loader: loader, logger: logger}
+// NewService creates a Service. persona and logger may be nil.
+func NewService(llm LLMClient, loader ContextLoader, persona PersonaRepository, logger ChatLogger) *Service {
+	return &Service{llm: llm, loader: loader, persona: persona, logger: logger}
 }
 
 // SendMessage loads user context, generates an AI reply, and optionally logs the exchange.
@@ -32,7 +33,15 @@ func (s *Service) SendMessage(ctx context.Context, input SendMessageInput) (Send
 		return SendMessageOutput{}, ErrNoCharacterSelected
 	}
 
-	prompt := buildPrompt(chatCtx, input.Message)
+	var persona Persona
+	if s.persona != nil {
+		persona, err = s.persona.Get(ctx, chatCtx.Character.ID)
+		if err != nil {
+			return SendMessageOutput{}, fmt.Errorf("get persona: %w", err)
+		}
+	}
+
+	prompt := buildPrompt(chatCtx, persona, input.Message)
 
 	reply, err := s.llm.GenerateReply(ctx, prompt)
 	if err != nil {
@@ -40,12 +49,17 @@ func (s *Service) SendMessage(ctx context.Context, input SendMessageInput) (Send
 	}
 
 	now := time.Now()
-	userMsg := Message{Role: "user", Content: input.Message, CreatedAt: now}
-	assistantMsg := Message{Role: "assistant", Content: reply, CreatedAt: now}
+	characterID := chatCtx.Character.ID
+	userMsg := Message{Role: "user", CharacterID: characterID, Content: input.Message, CreatedAt: now}
+	assistantMsg := Message{Role: "assistant", CharacterID: characterID, Content: reply, CreatedAt: now}
 
 	if s.logger != nil {
-		_ = s.logger.Save(ctx, input.UserID, userMsg)
-		_ = s.logger.Save(ctx, input.UserID, assistantMsg)
+		if err := s.logger.Save(ctx, input.UserID, userMsg); err != nil {
+			return SendMessageOutput{}, fmt.Errorf("save user message: %w", err)
+		}
+		if err := s.logger.Save(ctx, input.UserID, assistantMsg); err != nil {
+			return SendMessageOutput{}, fmt.Errorf("save assistant message: %w", err)
+		}
 	}
 
 	return SendMessageOutput{
@@ -55,7 +69,7 @@ func (s *Service) SendMessage(ctx context.Context, input SendMessageInput) (Send
 	}, nil
 }
 
-func buildPrompt(chatCtx ChatContext, userMessage string) Prompt {
+func buildPrompt(chatCtx ChatContext, persona Persona, userMessage string) Prompt {
 	c := chatCtx.Character
 	t := chatCtx.Tasks
 	st := chatCtx.ScreenTime
@@ -80,6 +94,10 @@ func buildPrompt(chatCtx ChatContext, userMessage string) Prompt {
 		t.CompletedCount, t.TotalCount,
 		st.TodayMinutes, st.TargetMinutes,
 	)
+
+	if persona.SystemInstruction != "" {
+		system += "\n\n" + persona.SystemInstruction
+	}
 
 	return Prompt{System: system, User: userMessage}
 }

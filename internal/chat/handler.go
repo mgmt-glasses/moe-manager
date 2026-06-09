@@ -18,9 +18,7 @@ func NewHandler(service *Service) *Handler {
 }
 
 type sendMessageRequest struct {
-	Message       string `json:"message"`
-	CharacterID   string `json:"characterId"`
-	GenerateVoice bool   `json:"generateVoice"`
+	Message string `json:"message"`
 }
 
 type messageDTO struct {
@@ -105,7 +103,9 @@ func (h *Handler) HandleSendMessage(w http.ResponseWriter, r *http.Request) {
 func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v) //nolint:errcheck
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		http.Error(w, "encode error", http.StatusInternalServerError)
+	}
 }
 
 func writeError(w http.ResponseWriter, status int, code, message string) {

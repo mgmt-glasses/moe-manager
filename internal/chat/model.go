@@ -10,6 +10,13 @@ type CharacterProfile struct {
 	SpeechStyle string
 }
 
+// Persona holds GCP-managed AI configuration for a character.
+// Fetched via PersonaRepository and applied to the LLM system instruction.
+type Persona struct {
+	CharacterID       string
+	SystemInstruction string
+}
+
 type TaskSummary struct {
 	CompletedCount int
 	TotalCount     int
@@ -35,9 +42,10 @@ type Prompt struct {
 
 // Message is a single chat turn.
 type Message struct {
-	Role      string // "user" or "assistant"
-	Content   string
-	CreatedAt time.Time
+	Role        string // "user" or "assistant"
+	CharacterID string
+	Content     string
+	CreatedAt   time.Time
 }
 
 // SendMessageInput is the input to Service.SendMessage.

@@ -28,7 +28,7 @@ func TestSendMessage_OK(t *testing.T) {
 	llm := &testutil.FakeLLMClient{Reply: "了解しました、社長。"}
 	logger := &testutil.FakeChatLogger{}
 
-	svc := chat.NewService(llm, loader, logger)
+	svc := chat.NewService(llm, loader, nil, logger)
 	out, err := svc.SendMessage(context.Background(), chat.SendMessageInput{
 		UserID:  "user_001",
 		Message: "今日はゲームしすぎた",
@@ -59,7 +59,7 @@ func TestSendMessage_LoggerReceivesBothMessages(t *testing.T) {
 	llm := &testutil.FakeLLMClient{Reply: "お疲れ様です。"}
 	logger := &testutil.FakeChatLogger{}
 
-	svc := chat.NewService(llm, loader, logger)
+	svc := chat.NewService(llm, loader, nil, logger)
 	_, err := svc.SendMessage(context.Background(), chat.SendMessageInput{
 		UserID:  "user_001",
 		Message: "hello",
@@ -76,13 +76,19 @@ func TestSendMessage_LoggerReceivesBothMessages(t *testing.T) {
 	if logger.Saved[1].Role != "assistant" {
 		t.Errorf("second saved message role: got %q, want %q", logger.Saved[1].Role, "assistant")
 	}
+	if logger.Saved[0].CharacterID != "char_001" {
+		t.Errorf("user message CharacterID: got %q, want %q", logger.Saved[0].CharacterID, "char_001")
+	}
+	if logger.Saved[1].CharacterID != "char_001" {
+		t.Errorf("assistant message CharacterID: got %q, want %q", logger.Saved[1].CharacterID, "char_001")
+	}
 }
 
 func TestSendMessage_NilLoggerSkipsPersistence(t *testing.T) {
 	loader := &testutil.FakeContextLoader{Ctx: baseContext}
 	llm := &testutil.FakeLLMClient{Reply: "ok"}
 
-	svc := chat.NewService(llm, loader, nil)
+	svc := chat.NewService(llm, loader, nil, nil)
 	_, err := svc.SendMessage(context.Background(), chat.SendMessageInput{
 		UserID:  "user_001",
 		Message: "hello",
@@ -95,7 +101,7 @@ func TestSendMessage_NilLoggerSkipsPersistence(t *testing.T) {
 func TestSendMessage_NoCharacter(t *testing.T) {
 	loader := &testutil.FakeContextLoader{Ctx: chat.ChatContext{}} // no character
 	llm := &testutil.FakeLLMClient{}
-	svc := chat.NewService(llm, loader, nil)
+	svc := chat.NewService(llm, loader, nil, nil)
 
 	_, err := svc.SendMessage(context.Background(), chat.SendMessageInput{
 		UserID:  "user_001",
@@ -109,7 +115,7 @@ func TestSendMessage_NoCharacter(t *testing.T) {
 func TestSendMessage_LLMError(t *testing.T) {
 	loader := &testutil.FakeContextLoader{Ctx: baseContext}
 	llm := &testutil.FakeLLMClient{Err: errors.New("LLM timeout")}
-	svc := chat.NewService(llm, loader, nil)
+	svc := chat.NewService(llm, loader, nil, nil)
 
 	_, err := svc.SendMessage(context.Background(), chat.SendMessageInput{
 		UserID:  "user_001",
@@ -123,7 +129,7 @@ func TestSendMessage_LLMError(t *testing.T) {
 func TestSendMessage_ContextLoadError(t *testing.T) {
 	loader := &testutil.FakeContextLoader{Err: errors.New("DB unavailable")}
 	llm := &testutil.FakeLLMClient{}
-	svc := chat.NewService(llm, loader, nil)
+	svc := chat.NewService(llm, loader, nil, nil)
 
 	_, err := svc.SendMessage(context.Background(), chat.SendMessageInput{
 		UserID:  "user_001",
@@ -131,5 +137,55 @@ func TestSendMessage_ContextLoadError(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error from context loader, got nil")
+	}
+}
+
+func TestSendMessage_PersonaSystemInstructionApplied(t *testing.T) {
+	loader := &testutil.FakeContextLoader{Ctx: baseContext}
+	llm := &testutil.FakeLLMClient{Reply: "はい、社長。"}
+	persona := &testutil.FakePersonaRepository{
+		Persona: chat.Persona{SystemInstruction: "敬語は使わず、フランクに話すこと。"},
+	}
+
+	svc := chat.NewService(llm, loader, persona, nil)
+	out, err := svc.SendMessage(context.Background(), chat.SendMessageInput{
+		UserID:  "user_001",
+		Message: "調子どう？",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if out.AssistantMessage.Content != "はい、社長。" {
+		t.Errorf("unexpected reply: %q", out.AssistantMessage.Content)
+	}
+}
+
+func TestSendMessage_PersonaError(t *testing.T) {
+	loader := &testutil.FakeContextLoader{Ctx: baseContext}
+	llm := &testutil.FakeLLMClient{}
+	persona := &testutil.FakePersonaRepository{Err: errors.New("Firestore unavailable")}
+
+	svc := chat.NewService(llm, loader, persona, nil)
+	_, err := svc.SendMessage(context.Background(), chat.SendMessageInput{
+		UserID:  "user_001",
+		Message: "hello",
+	})
+	if err == nil {
+		t.Fatal("expected error from persona repository, got nil")
+	}
+}
+
+func TestSendMessage_LoggerError(t *testing.T) {
+	loader := &testutil.FakeContextLoader{Ctx: baseContext}
+	llm := &testutil.FakeLLMClient{Reply: "ok"}
+	logger := &testutil.FakeChatLogger{Err: errors.New("DB write failed")}
+
+	svc := chat.NewService(llm, loader, nil, logger)
+	_, err := svc.SendMessage(context.Background(), chat.SendMessageInput{
+		UserID:  "user_001",
+		Message: "hello",
+	})
+	if err == nil {
+		t.Fatal("expected error from logger, got nil")
 	}
 }

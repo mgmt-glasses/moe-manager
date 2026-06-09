@@ -41,6 +41,7 @@ migrations/                 # PostgreSQL マイグレーション
 | `05-screentime-recording.md` | スクリーンタイム、または娯楽時間を記録できる |
 | `06-statistics-summary.md` | タスク達成状況と娯楽時間を統計として確認できる |
 | `07-chat-logs.md` | チャットログを確認できる |
+| `08-postgresql-schema-design.md` | MVP の PostgreSQL スキーマを設計できる |
 
 ## テンプレート
 

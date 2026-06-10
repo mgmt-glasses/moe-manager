@@ -42,6 +42,7 @@ migrations/                 # PostgreSQL マイグレーション
 | `06-statistics-summary.md` | タスク達成状況と娯楽時間を統計として確認できる |
 | `07-chat-logs.md` | チャットログを確認できる |
 | `08-postgresql-schema-design.md` | MVP の PostgreSQL スキーマを設計できる |
+| `10-vertex-ai-context-caching.md` | Vertex AI Context Caching で LLM トークンコストを削減する |
 
 ## テンプレート
 

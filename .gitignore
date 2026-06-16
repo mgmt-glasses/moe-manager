@@ -152,12 +152,28 @@ cython_debug/
 .uv_python/
 uv.lock
 
-# Optional AI development-management kit
+# Go
+/bin/
+/api
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Local / AI development-management kit
 template/
 .claude/commands/
 .claude/settings.json
 .claude/skills/
-.github/ISSUE_TEMPLATE/
 .github/workflows/repo-readiness.yml
 docs/dev-ops/
 docs/development-setup.md

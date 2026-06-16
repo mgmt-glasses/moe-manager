@@ -19,6 +19,8 @@ import (
 	statsadapter "github.com/mgmt-glasses/moe-manager/internal/statistics/adapter"
 	"github.com/mgmt-glasses/moe-manager/internal/task"
 	taskadapter "github.com/mgmt-glasses/moe-manager/internal/task/adapter"
+	"github.com/mgmt-glasses/moe-manager/internal/screentime"
+	screentimeadapter "github.com/mgmt-glasses/moe-manager/internal/screentime/adapter"
 )
 
 func main() {
@@ -49,6 +51,10 @@ func main() {
 	taskSvc := task.NewService(taskRepo)
 	taskHandler := task.NewHandler(taskSvc)
 
+	screentimeRepo := screentimeadapter.NewPostgresScreenTimeRepository(db)
+	screentimeSvc := screentime.NewService(screentimeRepo)
+	screentimeHandler := screentime.NewHandler(screentimeSvc)
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -68,6 +74,10 @@ func main() {
 		r.Patch("/tasks/{taskId}/complete", taskHandler.Complete)
 		r.Patch("/tasks/{taskId}/reopen", taskHandler.Reopen)
 		r.Delete("/tasks/{taskId}", taskHandler.Delete)
+
+		r.Put("/entertainment-records/{date}", screentimeHandler.Upsert)
+		r.Get("/entertainment-records/{date}", screentimeHandler.Get)
+		r.Get("/entertainment-records", screentimeHandler.List)
 	})
 
 	port := os.Getenv("PORT")

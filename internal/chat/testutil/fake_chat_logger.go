@@ -3,7 +3,7 @@ package testutil
 import (
 	"context"
 
-	"moe-manager/internal/chat"
+	"github.com/mgmt-glasses/moe-manager/internal/chat"
 )
 
 // FakeChatLogger is an in-memory test double for chat.ChatLogger.

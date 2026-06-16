@@ -3,7 +3,7 @@ package testutil
 import (
 	"context"
 
-	"moe-manager/internal/chat"
+	"github.com/mgmt-glasses/moe-manager/internal/chat"
 )
 
 // FakeContextLoader is a test double for chat.ContextLoader.

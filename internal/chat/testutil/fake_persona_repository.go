@@ -3,7 +3,7 @@ package testutil
 import (
 	"context"
 
-	"moe-manager/internal/chat"
+	"github.com/mgmt-glasses/moe-manager/internal/chat"
 )
 
 // FakePersonaRepository is a test double for chat.PersonaRepository.

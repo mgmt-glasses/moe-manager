@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"moe-manager/internal/chat"
-	"moe-manager/internal/chat/testutil"
+	"github.com/mgmt-glasses/moe-manager/internal/chat"
+	"github.com/mgmt-glasses/moe-manager/internal/chat/testutil"
 )
 
 var baseCharacter = chat.CharacterProfile{

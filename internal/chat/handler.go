@@ -1,19 +1,25 @@
 package chat
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
 )
 
+// messageSender is the minimal interface Handler requires from the service layer.
+type messageSender interface {
+	SendMessage(ctx context.Context, input SendMessageInput) (SendMessageOutput, error)
+}
+
 // Handler is the HTTP handler for the chat domain.
 type Handler struct {
-	service *Service
+	service messageSender
 }
 
 // NewHandler creates a Handler.
-func NewHandler(service *Service) *Handler {
+func NewHandler(service messageSender) *Handler {
 	return &Handler{service: service}
 }
 

@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/mgmt-glasses/moe-manager/internal/voice"
 )
 
 // LocalAudioStorage stores WAV files under a configurable base directory.
@@ -30,9 +32,17 @@ func (s *LocalAudioStorage) Open(_ context.Context, voiceFileID string) (io.Read
 	f, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("audio not found: %s", voiceFileID)
+			return nil, voice.ErrNotFound
 		}
 		return nil, fmt.Errorf("open audio: %w", err)
 	}
 	return f, nil
+}
+
+func (s *LocalAudioStorage) Delete(_ context.Context, voiceFileID string) error {
+	path := filepath.Join(s.baseDir, voiceFileID+".wav")
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("delete audio: %w", err)
+	}
+	return nil
 }

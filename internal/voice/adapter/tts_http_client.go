@@ -7,9 +7,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/mgmt-glasses/moe-manager/internal/voice"
 )
+
+const defaultTTSTimeout = 60 * time.Second
 
 // TTSHTTPClient calls the Python voice-library service (POST /generate → WAV bytes).
 type TTSHTTPClient struct {
@@ -20,7 +23,7 @@ type TTSHTTPClient struct {
 func NewTTSHTTPClient(baseURL string) *TTSHTTPClient {
 	return &TTSHTTPClient{
 		baseURL:    baseURL,
-		httpClient: &http.Client{},
+		httpClient: &http.Client{Timeout: defaultTTSTimeout},
 	}
 }
 

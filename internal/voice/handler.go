@@ -5,25 +5,20 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/mgmt-glasses/moe-manager/internal/shared"
 )
 
-type voiceGenerator interface {
-	Generate(ctx context.Context, characterID, voicePresetID, text string) (VoiceFile, error)
-}
-
-type voiceOpener interface {
+type voiceService interface {
+	Generate(ctx context.Context, userID, characterID, voicePresetID, text string) (VoiceFile, error)
 	Open(ctx context.Context, voiceFileID string) (io.ReadCloser, error)
 }
 
 type Handler struct {
-	svc interface {
-		voiceGenerator
-		voiceOpener
-	}
+	svc voiceService
 }
 
 func NewHandler(svc *Service) *Handler {
@@ -44,6 +39,8 @@ type voiceFileResponse struct {
 }
 
 func (h *Handler) Generate(w http.ResponseWriter, r *http.Request) {
+	userID := chi.URLParam(r, "userId")
+
 	var body generateRequest
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		shared.WriteError(w, http.StatusBadRequest, "INVALID_BODY", "リクエストボディが正しくありません")
@@ -54,9 +51,16 @@ func (h *Handler) Generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vf, err := h.svc.Generate(r.Context(), body.CharacterID, body.VoicePresetID, body.Text)
+	vf, err := h.svc.Generate(r.Context(), userID, body.CharacterID, body.VoicePresetID, body.Text)
 	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "音声生成に失敗しました")
+		switch {
+		case errors.Is(err, ErrForbidden):
+			shared.WriteError(w, http.StatusForbidden, "FORBIDDEN", "指定されたキャラクターはこのユーザーに選択されていません")
+		case errors.Is(err, ErrUserNotFound):
+			shared.WriteError(w, http.StatusNotFound, "NOT_FOUND", "ユーザーが見つかりません")
+		default:
+			shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "音声生成に失敗しました")
+		}
 		return
 	}
 
@@ -87,5 +91,7 @@ func (h *Handler) GetAudio(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "audio/wav")
 	w.WriteHeader(http.StatusOK)
-	io.Copy(w, rc)
+	if _, err := io.Copy(w, rc); err != nil {
+		log.Printf("voice GetAudio: stream error for %s: %v", voiceFileID, err)
+	}
 }

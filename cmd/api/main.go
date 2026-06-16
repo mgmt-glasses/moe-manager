@@ -76,7 +76,8 @@ func main() {
 	voiceSynthesizer := voiceadapter.NewTTSHTTPClient(ttsURL)
 	voiceStorage := voiceadapter.NewLocalAudioStorage(voiceAudioDir)
 	voiceRepo := voiceadapter.NewPostgresVoiceFileRepository(db)
-	voiceSvc := voice.NewService(voiceSynthesizer, voiceStorage, voiceRepo)
+	voiceUserChecker := voiceadapter.NewPostgresUserCharacterChecker(db)
+	voiceSvc := voice.NewService(voiceSynthesizer, voiceStorage, voiceRepo, voiceUserChecker)
 	voiceHandler := voice.NewHandler(voiceSvc)
 
 	r := chi.NewRouter()

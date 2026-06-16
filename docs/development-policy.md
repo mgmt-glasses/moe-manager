@@ -131,13 +131,20 @@ PR には以下を書く。
 
 ## 品質ゲート
 
-現時点では、リポジトリ共通の lint、型チェック、テストコマンドは未定義です。
-PR では最低限、変更箇所に応じた動作確認内容を `.github/pull_request_template.md` の「動作確認」に記載します。
+PR 作成前に以下を必ず実行する。
 
-今後 CI や共通コマンドを追加した場合は、以下をこのドキュメントに追記します。
+```bash
+make verify   # go vet + go test + go build
+```
 
-- セットアップ手順
-- API サーバー起動コマンド
-- テストコマンド
-- lint / format / 型チェックコマンド
-- マージ前に必須とする CI
+CI（`.github/workflows/ci.yml`）は `develop` / `main` への push と PR で自動実行。
+
+| コマンド | 内容 |
+| --- | --- |
+| `make build` | `go build ./...` |
+| `make test` | `go test ./...` |
+| `make vet` | `go vet ./...` |
+| `make verify` | vet + test + build を順に実行 |
+| `make run` | `go run ./cmd/api`（API サーバー起動） |
+
+フォーマットは `gofmt` に準拠する（エディタ設定は `.editorconfig` を参照）。

@@ -150,3 +150,19 @@ cython_debug/
 # uv
 .uv_cache/
 .uv_python/
+
+# Go
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+
+# Environment
+.env
+.env.local
+.env.*.local

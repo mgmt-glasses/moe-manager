@@ -5,22 +5,23 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 var (
-	ErrNotFound    = errors.New("voice file not found")
+	ErrNotFound     = errors.New("voice file not found")
 	ErrUserNotFound = errors.New("user not found")
-	ErrForbidden   = errors.New("character does not belong to user")
+	ErrForbidden    = errors.New("character does not belong to user")
 )
 
 type Service struct {
-	synthesizer  Synthesizer
-	storage      AudioStorage
-	repo         VoiceFileRepository
-	userChecker  UserCharacterChecker
+	synthesizer Synthesizer
+	storage     AudioStorage
+	repo        VoiceFileRepository
+	userChecker UserCharacterChecker
 }
 
 func NewService(synthesizer Synthesizer, storage AudioStorage, repo VoiceFileRepository, userChecker UserCharacterChecker) *Service {
@@ -43,9 +44,13 @@ func (s *Service) Generate(ctx context.Context, userID, characterID, voicePreset
 	if err != nil {
 		return VoiceFile{}, fmt.Errorf("synthesize: %w", err)
 	}
+	if len(audio) == 0 {
+		return VoiceFile{}, fmt.Errorf("synthesizer returned empty audio")
+	}
 
 	vf := VoiceFile{
 		ID:          uuid.NewString(),
+		UserID:      userID,
 		CharacterID: characterID,
 		SourceText:  text,
 		CreatedAt:   time.Now(),
@@ -55,20 +60,25 @@ func (s *Service) Generate(ctx context.Context, userID, characterID, voicePreset
 		return VoiceFile{}, fmt.Errorf("save audio: %w", err)
 	}
 	if err := s.repo.Save(ctx, vf); err != nil {
-		// 補償削除: DB 保存失敗時にストレージから孤立ファイルを除去
-		_ = s.storage.Delete(ctx, vf.ID)
+		if delErr := s.storage.Delete(ctx, vf.ID); delErr != nil {
+			log.Printf("voice Generate: compensating delete failed for %s: %v", vf.ID, delErr)
+		}
 		return VoiceFile{}, fmt.Errorf("save voice file record: %w", err)
 	}
 
 	return vf, nil
 }
 
-func (s *Service) Open(ctx context.Context, voiceFileID string) (io.ReadCloser, error) {
-	if _, err := s.repo.FindByID(ctx, voiceFileID); err != nil {
+func (s *Service) Open(ctx context.Context, userID, voiceFileID string) (io.ReadCloser, error) {
+	vf, err := s.repo.FindByID(ctx, voiceFileID)
+	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("find voice file: %w", err)
+	}
+	if vf.UserID != userID {
+		return nil, ErrNotFound
 	}
 	rc, err := s.storage.Open(ctx, voiceFileID)
 	if err != nil {

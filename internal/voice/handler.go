@@ -14,7 +14,7 @@ import (
 
 type voiceService interface {
 	Generate(ctx context.Context, userID, characterID, voicePresetID, text string) (VoiceFile, error)
-	Open(ctx context.Context, voiceFileID string) (io.ReadCloser, error)
+	Open(ctx context.Context, userID, voiceFileID string) (io.ReadCloser, error)
 }
 
 type Handler struct {
@@ -76,9 +76,10 @@ func (h *Handler) Generate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetAudio(w http.ResponseWriter, r *http.Request) {
+	userID := chi.URLParam(r, "userId")
 	voiceFileID := chi.URLParam(r, "voiceFileId")
 
-	rc, err := h.svc.Open(r.Context(), voiceFileID)
+	rc, err := h.svc.Open(r.Context(), userID, voiceFileID)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			shared.WriteError(w, http.StatusNotFound, "NOT_FOUND", "音声ファイルが見つかりません")

@@ -3,6 +3,7 @@ package voiceadapter
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/mgmt-glasses/moe-manager/internal/voice"
@@ -23,7 +24,7 @@ func (c *PostgresUserCharacterChecker) GetSelectedCharacterID(ctx context.Contex
 		`SELECT selected_character_id FROM users WHERE id = $1`,
 		userID,
 	).Scan(&selectedCharID)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return "", voice.ErrUserNotFound
 	}
 	if err != nil {

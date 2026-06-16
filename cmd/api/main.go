@@ -94,8 +94,6 @@ func main() {
 	r.Get("/api/v1/characters", charHandler.List)
 	r.Get("/api/v1/characters/{characterId}", charHandler.GetByID)
 
-	r.Get("/api/v1/voice-files/{voiceFileId}", voiceHandler.GetAudio)
-
 	r.Route("/api/v1/users/{userId}", func(r chi.Router) {
 		r.Get("/", userHandler.GetByID)
 		r.Patch("/", userHandler.Update)
@@ -112,6 +110,7 @@ func main() {
 		r.Delete("/tasks/{taskId}", taskHandler.Delete)
 
 		r.Post("/voices", voiceHandler.Generate)
+		r.Get("/voice-files/{voiceFileId}", voiceHandler.GetAudio)
 	})
 
 	port := os.Getenv("PORT")

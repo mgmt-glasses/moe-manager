@@ -3,6 +3,7 @@ package voiceadapter
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/mgmt-glasses/moe-manager/internal/voice"
@@ -18,8 +19,8 @@ func NewPostgresVoiceFileRepository(db *sql.DB) *PostgresVoiceFileRepository {
 
 func (r *PostgresVoiceFileRepository) Save(ctx context.Context, vf voice.VoiceFile) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO voice_files (id, character_id, source_text, created_at) VALUES ($1, $2, $3, $4)`,
-		vf.ID, vf.CharacterID, vf.SourceText, vf.CreatedAt,
+		`INSERT INTO voice_files (id, user_id, character_id, source_text, created_at) VALUES ($1, $2, $3, $4, $5)`,
+		vf.ID, vf.UserID, vf.CharacterID, vf.SourceText, vf.CreatedAt,
 	)
 	return err
 }
@@ -27,10 +28,10 @@ func (r *PostgresVoiceFileRepository) Save(ctx context.Context, vf voice.VoiceFi
 func (r *PostgresVoiceFileRepository) FindByID(ctx context.Context, id string) (voice.VoiceFile, error) {
 	var vf voice.VoiceFile
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, character_id, source_text, created_at FROM voice_files WHERE id = $1`,
+		`SELECT id, user_id, character_id, source_text, created_at FROM voice_files WHERE id = $1`,
 		id,
-	).Scan(&vf.ID, &vf.CharacterID, &vf.SourceText, &vf.CreatedAt)
-	if err == sql.ErrNoRows {
+	).Scan(&vf.ID, &vf.UserID, &vf.CharacterID, &vf.SourceText, &vf.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
 		return voice.VoiceFile{}, voice.ErrNotFound
 	}
 	if err != nil {

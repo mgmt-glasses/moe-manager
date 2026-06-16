@@ -23,6 +23,8 @@ import (
 	taskadapter "github.com/mgmt-glasses/moe-manager/internal/task/adapter"
 	"github.com/mgmt-glasses/moe-manager/internal/user"
 	useradapter "github.com/mgmt-glasses/moe-manager/internal/user/adapter"
+	"github.com/mgmt-glasses/moe-manager/internal/voice"
+	voiceadapter "github.com/mgmt-glasses/moe-manager/internal/voice/adapter"
 )
 
 var _ user.CharacterValidator = (*charadapter.PostgresCharacterRepository)(nil)
@@ -63,6 +65,20 @@ func main() {
 	taskSvc := task.NewService(taskRepo)
 	taskHandler := task.NewHandler(taskSvc)
 
+	ttsURL := os.Getenv("TTS_SERVICE_URL")
+	if ttsURL == "" {
+		ttsURL = "http://localhost:8001"
+	}
+	voiceAudioDir := os.Getenv("VOICE_AUDIO_DIR")
+	if voiceAudioDir == "" {
+		voiceAudioDir = "data/voices"
+	}
+	voiceSynthesizer := voiceadapter.NewTTSHTTPClient(ttsURL)
+	voiceStorage := voiceadapter.NewLocalAudioStorage(voiceAudioDir)
+	voiceRepo := voiceadapter.NewPostgresVoiceFileRepository(db)
+	voiceSvc := voice.NewService(voiceSynthesizer, voiceStorage, voiceRepo)
+	voiceHandler := voice.NewHandler(voiceSvc)
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -76,6 +92,8 @@ func main() {
 
 	r.Get("/api/v1/characters", charHandler.List)
 	r.Get("/api/v1/characters/{characterId}", charHandler.GetByID)
+
+	r.Get("/api/v1/voice-files/{voiceFileId}", voiceHandler.GetAudio)
 
 	r.Route("/api/v1/users/{userId}", func(r chi.Router) {
 		r.Get("/", userHandler.GetByID)
@@ -91,6 +109,8 @@ func main() {
 		r.Patch("/tasks/{taskId}/complete", taskHandler.Complete)
 		r.Patch("/tasks/{taskId}/reopen", taskHandler.Reopen)
 		r.Delete("/tasks/{taskId}", taskHandler.Delete)
+
+		r.Post("/voices", voiceHandler.Generate)
 	})
 
 	port := os.Getenv("PORT")

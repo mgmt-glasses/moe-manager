@@ -40,6 +40,8 @@ DB は、ユーザ設定、タスク、娯楽時間、チャット履歴を永�
 | `chat_logs` | ユーザと AI の会話履歴 |
 | `voice_files` | 生成音声ファイルのメタデータ |
 
+各テーブルのカラム定義、型、NULL 可否、デフォルト値、主キー/外部キー/unique/check 制約、外部キーの削除時挙動は `detail/db-design.md` を正本とする。
+
 命名整理:
 
 - DB テーブル名は現行実装に合わせて `screentime_records` を正とする。
@@ -50,21 +52,23 @@ DB は、ユーザ設定、タスク、娯楽時間、チャット履歴を永�
 ## インデックス方針
 
 - `tasks(user_id, status, created_at)`: 未完了タスク取得用
-- `screentime_records(user_id, date)`: 特定日の記録取得用
+- `screentime_records(user_id, date)`: 特定日の記録取得用（unique 制約がインデックスを兼ねる）
 - `chat_logs(user_id, created_at)`: 直近文脈取得用
 - `voice_files(character_id, created_at)`: 音声履歴取得用
 
 ## マイグレーション計画
 
-初期マイグレーションは以下の粒度を基本とします。
+マイグレーションは以下の粒度を基本とします（詳細は `detail/db-design.md` の「マイグレーション計画」を参照）。
 
-1. `001_init_master_and_user.sql`
+1. `000001_init_master_and_user`（適用済み）
    - `characters`, `users` の作成
    - 初期キャラデータの投入
-2. `002_init_task_and_activity.sql`
-   - `tasks`, `screentime_records` の作成
-3. `003_init_logs.sql`
-   - `chat_logs`, `voice_files` の作成
+2. `000002_init_task_and_activity`（適用済み）
+   - `tasks` の作成
+3. `000003_init_screentime`（未適用）
+   - `screentime_records` の作成
+4. `000004_init_voice_and_chat`（未適用）
+   - `voice_files`, `chat_logs` の作成（この順）
 
 ## マイグレーション実行方法
 

@@ -154,6 +154,7 @@ uv.lock
 
 # Go
 /bin/
+/api
 *.exe
 *.exe~
 *.dll

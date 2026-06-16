@@ -25,6 +25,8 @@ import (
 	useradapter "github.com/mgmt-glasses/moe-manager/internal/user/adapter"
 )
 
+var _ user.CharacterValidator = (*charadapter.PostgresCharacterRepository)(nil)
+
 func main() {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {

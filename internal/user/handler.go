@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -9,11 +10,18 @@ import (
 	"github.com/mgmt-glasses/moe-manager/internal/shared"
 )
 
-type Handler struct {
-	svc *Service
+type userServicer interface {
+	Create(ctx context.Context, in CreateInput) (User, error)
+	FindByID(ctx context.Context, id string) (User, error)
+	Update(ctx context.Context, id string, in UpdateInput) (User, error)
+	UpdateSelectedCharacter(ctx context.Context, userID, characterID string) (User, error)
 }
 
-func NewHandler(svc *Service) *Handler {
+type Handler struct {
+	svc userServicer
+}
+
+func NewHandler(svc userServicer) *Handler {
 	return &Handler{svc: svc}
 }
 
@@ -153,11 +161,15 @@ func (h *Handler) UpdateSelectedCharacter(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	selectedCharacterID := ""
+	if u.SelectedCharacterID != nil {
+		selectedCharacterID = *u.SelectedCharacterID
+	}
 	shared.WriteJSON(w, http.StatusOK, shared.Response{
 		Success: true,
 		Data: map[string]string{
 			"userId":              u.ID,
-			"selectedCharacterId": *u.SelectedCharacterID,
+			"selectedCharacterId": selectedCharacterID,
 		},
 	})
 }

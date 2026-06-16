@@ -1,6 +1,7 @@
 package character
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -8,11 +9,16 @@ import (
 	"github.com/mgmt-glasses/moe-manager/internal/shared"
 )
 
-type Handler struct {
-	svc *Service
+type characterServicer interface {
+	List(ctx context.Context) ([]Character, error)
+	FindByID(ctx context.Context, id string) (Character, error)
 }
 
-func NewHandler(svc *Service) *Handler {
+type Handler struct {
+	svc characterServicer
+}
+
+func NewHandler(svc characterServicer) *Handler {
 	return &Handler{svc: svc}
 }
 

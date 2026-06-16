@@ -11,7 +11,7 @@ jobs:
       - name: Check branch name
         run: |
           BRANCH="${{ github.head_ref }}"
-          if echo "$BRANCH" | grep -qE '^(feature|fix|hotfix|refactor|docs|chore|test|build|design)/.+'; then
+          if echo "$BRANCH" | grep -qE '^(feature|fix|hotfix)/.+'; then
             echo "Branch name OK: $BRANCH"
           else
             echo "Invalid branch name: $BRANCH"

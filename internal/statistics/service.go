@@ -24,14 +24,9 @@ func (s *StatisticsService) GetDaily(ctx context.Context, userID string, date ti
 
 func (s *StatisticsService) GetWeekly(ctx context.Context, userID string, endDate time.Time) (WeeklyStats, error) {
 	from := endDate.AddDate(0, 0, -6)
-	days := make([]DailyStats, 7)
-	for i := range 7 {
-		d := from.AddDate(0, 0, i)
-		stats, err := s.query.GetDailyStats(ctx, userID, d)
-		if err != nil {
-			return WeeklyStats{}, err
-		}
-		days[i] = stats
+	days, err := s.query.GetRangeStats(ctx, userID, from, endDate)
+	if err != nil {
+		return WeeklyStats{}, err
 	}
 	return WeeklyStats{From: from, To: endDate, Days: days}, nil
 }

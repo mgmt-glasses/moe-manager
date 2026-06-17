@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net/http"
@@ -65,8 +66,18 @@ func main() {
 	taskSvc := task.NewService(taskRepo)
 	taskHandler := task.NewHandler(taskSvc)
 
+	var screentimeAnalyzer screentime.ImageAnalyzer
+	if geminiKey := os.Getenv("GEMINI_API_KEY"); geminiKey != "" {
+		analyzer, err := screentimeadapter.NewGeminiImageAnalyzer(context.Background(), geminiKey)
+		if err == nil {
+			screentimeAnalyzer = analyzer
+		} else {
+			log.Printf("warning: failed to init gemini analyzer: %v", err)
+		}
+	}
+
 	screentimeRepo := screentimeadapter.NewPostgresScreenTimeRepository(db)
-	screentimeSvc := screentime.NewService(screentimeRepo)
+	screentimeSvc := screentime.NewService(screentimeRepo, screentimeAnalyzer)
 	screentimeHandler := screentime.NewHandler(screentimeSvc)
 
 	r := chi.NewRouter()
@@ -101,6 +112,7 @@ func main() {
 		r.Put("/entertainment-records/{date}", screentimeHandler.Upsert)
 		r.Get("/entertainment-records/{date}", screentimeHandler.Get)
 		r.Get("/entertainment-records", screentimeHandler.List)
+		r.Post("/entertainment-records/analyze", screentimeHandler.Analyze)
 	})
 
 	port := os.Getenv("PORT")

@@ -2,17 +2,19 @@ package screentime
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type Service struct {
-	repo Repository
+	repo     Repository
+	analyzer ImageAnalyzer
 }
 
-func NewService(repo Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo Repository, analyzer ImageAnalyzer) *Service {
+	return &Service{repo: repo, analyzer: analyzer}
 }
 
 func (s *Service) UpsertRecord(ctx context.Context, userID string, date time.Time, minutes, targetMinutes int) (*ScreenTimeRecord, error) {
@@ -31,7 +33,7 @@ func (s *Service) UpsertRecord(ctx context.Context, userID string, date time.Tim
 		rec.UpdatedAt = now
 	} else {
 		rec = ScreenTimeRecord{
-			RecordID:      "ent_" + uuid.New().String()[:8],
+			RecordID:      "ent_" + uuid.New().String(),
 			UserID:        userID,
 			Date:          date,
 			Minutes:       minutes,
@@ -70,4 +72,11 @@ func (s *Service) ListRecords(ctx context.Context, userID string, fromDate, toDa
 		records[i].CalculateDiff()
 	}
 	return records, nil
+}
+
+func (s *Service) Analyze(ctx context.Context, base64Data, mimeType string) (*AnalysisResult, error) {
+	if s.analyzer == nil {
+		return nil, fmt.Errorf("analyzer not configured")
+	}
+	return s.analyzer.AnalyzeImage(ctx, base64Data, mimeType)
 }

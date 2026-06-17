@@ -105,14 +105,20 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	fromDate := toDate.AddDate(0, 0, -6)
 
 	if s := r.URL.Query().Get("from"); s != "" {
-		if d, err := time.Parse("2006-01-02", s); err == nil {
-			fromDate = d
+		d, err := time.Parse("2006-01-02", s)
+		if err != nil {
+			shared.WriteError(w, http.StatusBadRequest, "INVALID_DATE", "from の形式が正しくありません（YYYY-MM-DD）")
+			return
 		}
+		fromDate = d
 	}
 	if s := r.URL.Query().Get("to"); s != "" {
-		if d, err := time.Parse("2006-01-02", s); err == nil {
-			toDate = d
+		d, err := time.Parse("2006-01-02", s)
+		if err != nil {
+			shared.WriteError(w, http.StatusBadRequest, "INVALID_DATE", "to の形式が正しくありません（YYYY-MM-DD）")
+			return
 		}
+		toDate = d
 	}
 
 	records, err := h.svc.ListRecords(r.Context(), userID, fromDate, toDate)
@@ -129,5 +135,37 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	shared.WriteJSON(w, http.StatusOK, shared.Response{
 		Success: true,
 		Data:    res,
+	})
+}
+
+type analyzeRequest struct {
+	Image    string `json:"image"`
+	MimeType string `json:"mime_type"`
+}
+
+func (h *Handler) Analyze(w http.ResponseWriter, r *http.Request) {
+	var req analyzeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		shared.WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", "リクエストの解析に失敗しました")
+		return
+	}
+
+	if req.Image == "" {
+		shared.WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", "画像データが必要です")
+		return
+	}
+	if req.MimeType == "" {
+		req.MimeType = "image/jpeg"
+	}
+
+	result, err := h.svc.Analyze(r.Context(), req.Image, req.MimeType)
+	if err != nil {
+		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "画像解析に失敗しました: "+err.Error())
+		return
+	}
+
+	shared.WriteJSON(w, http.StatusOK, shared.Response{
+		Success: true,
+		Data:    result,
 	})
 }

@@ -15,13 +15,19 @@ import (
 	_ "github.com/lib/pq"
 
 	migrations "github.com/mgmt-glasses/moe-manager/migrations"
+	"github.com/mgmt-glasses/moe-manager/internal/character"
+	charadapter "github.com/mgmt-glasses/moe-manager/internal/character/adapter"
+	"github.com/mgmt-glasses/moe-manager/internal/screentime"
+	screentimeadapter "github.com/mgmt-glasses/moe-manager/internal/screentime/adapter"
 	"github.com/mgmt-glasses/moe-manager/internal/statistics"
 	statsadapter "github.com/mgmt-glasses/moe-manager/internal/statistics/adapter"
 	"github.com/mgmt-glasses/moe-manager/internal/task"
 	taskadapter "github.com/mgmt-glasses/moe-manager/internal/task/adapter"
-	"github.com/mgmt-glasses/moe-manager/internal/screentime"
-	screentimeadapter "github.com/mgmt-glasses/moe-manager/internal/screentime/adapter"
+	"github.com/mgmt-glasses/moe-manager/internal/user"
+	useradapter "github.com/mgmt-glasses/moe-manager/internal/user/adapter"
 )
+
+var _ user.CharacterValidator = (*charadapter.PostgresCharacterRepository)(nil)
 
 func main() {
 	dbURL := os.Getenv("DATABASE_URL")
@@ -42,6 +48,14 @@ func main() {
 	if err := runMigrations(db); err != nil {
 		log.Fatalf("migration failed: %v", err)
 	}
+
+	charRepo := charadapter.NewPostgresCharacterRepository(db)
+	charSvc := character.NewService(charRepo)
+	charHandler := character.NewHandler(charSvc)
+
+	userRepo := useradapter.NewPostgresUserRepository(db)
+	userSvc := user.NewService(userRepo, charRepo)
+	userHandler := user.NewHandler(userSvc)
 
 	statsQuery := statsadapter.NewPostgresStatisticsQuery(db)
 	statsSvc := statistics.NewStatisticsService(statsQuery)
@@ -64,7 +78,16 @@ func main() {
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 
+	r.Post("/api/v1/users", userHandler.Create)
+
+	r.Get("/api/v1/characters", charHandler.List)
+	r.Get("/api/v1/characters/{characterId}", charHandler.GetByID)
+
 	r.Route("/api/v1/users/{userId}", func(r chi.Router) {
+		r.Get("/", userHandler.GetByID)
+		r.Patch("/", userHandler.Update)
+		r.Patch("/selected-character", userHandler.UpdateSelectedCharacter)
+
 		r.Get("/stats/today", statsHandler.GetToday)
 		r.Get("/stats/daily/{date}", statsHandler.GetDaily)
 		r.Get("/stats/weekly", statsHandler.GetWeekly)

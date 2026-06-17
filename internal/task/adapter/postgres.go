@@ -78,14 +78,14 @@ func (r *PostgresTaskRepository) FindByID(ctx context.Context, taskID string) (t
 
 func (r *PostgresTaskRepository) UpdateStatus(ctx context.Context, taskID string, status task.Status, completedAt *time.Time) error {
 	_, err := r.db.ExecContext(ctx, `
-		UPDATE tasks SET status = $1, completed_at = $2 WHERE id = $3
+		UPDATE tasks SET status = $1, completed_at = $2 WHERE id = $3 AND deleted_at IS NULL
 	`, string(status), completedAt, taskID)
 	return err
 }
 
 func (r *PostgresTaskRepository) SoftDelete(ctx context.Context, taskID string) error {
 	_, err := r.db.ExecContext(ctx, `
-		UPDATE tasks SET deleted_at = $1 WHERE id = $2
+		UPDATE tasks SET deleted_at = $1 WHERE id = $2 AND deleted_at IS NULL
 	`, time.Now(), taskID)
 	return err
 }

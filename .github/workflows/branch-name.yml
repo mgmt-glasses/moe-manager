@@ -1,0 +1,20 @@
+name: branch-name
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          if echo "$BRANCH" | grep -qE '^(feature|fix|hotfix)/.+'; then
+            echo "Branch name OK: $BRANCH"
+          else
+            echo "Invalid branch name: $BRANCH"
+            echo "Expected: feature/<module>-<feature> or fix/... etc."
+            exit 1
+          fi

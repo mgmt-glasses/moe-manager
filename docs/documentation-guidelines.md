@@ -21,6 +21,7 @@
 | `mvp-summary.md` | MVP の目的、機能、画面の要約 |
 | `api-guidelines.md` | API 共通仕様とドメイン方針 |
 | `database-guidelines.md` | DB 設計とマイグレーション方針 |
+| `testing-guidelines.md` | テストの目的、fake/service/handler テストの実装方針 |
 | `documentation-guidelines.md` | ドキュメント更新ルール |
 
 ## 書き方

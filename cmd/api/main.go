@@ -27,13 +27,15 @@ import (
 
 var _ user.CharacterValidator = (*charadapter.PostgresCharacterRepository)(nil)
 
-func main() {
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		dbURL = "postgresql://postgres:postgres@localhost:5432/moe"
+func resolveDatabaseURL() string {
+	if v := os.Getenv("DATABASE_URL"); v != "" {
+		return v
 	}
+	return "postgresql://postgres:postgres@localhost:5432/moe"
+}
 
-	db, err := sql.Open("pgx", dbURL)
+func main() {
+	db, err := sql.Open("pgx", resolveDatabaseURL())
 	if err != nil {
 		log.Fatalf("failed to open db: %v", err)
 	}
@@ -47,6 +49,23 @@ func main() {
 		log.Fatalf("migration failed: %v", err)
 	}
 
+	r := newRouter(db)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("server listening on :%s", port)
+	if err := http.ListenAndServe(":"+port, r); err != nil {
+		log.Fatalf("server error: %v", err)
+	}
+}
+
+// newRouter wires up domain services against db and returns the HTTP router.
+// Extracted from main so integration tests can exercise the real routing
+// and dependency wiring against a test database.
+func newRouter(db *sql.DB) http.Handler {
 	charRepo := charadapter.NewPostgresCharacterRepository(db)
 	charSvc := character.NewService(charRepo)
 	charHandler := character.NewHandler(charSvc)
@@ -93,15 +112,7 @@ func main() {
 		r.Delete("/tasks/{taskId}", taskHandler.Delete)
 	})
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	log.Printf("server listening on :%s", port)
-	if err := http.ListenAndServe(":"+port, r); err != nil {
-		log.Fatalf("server error: %v", err)
-	}
+	return r
 }
 
 func runMigrations(db *sql.DB) error {

@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // messageSender is the minimal interface Handler requires from the service layer.
@@ -59,7 +61,7 @@ type apiError struct {
 
 // HandleSendMessage handles POST /api/v1/users/{userId}/chat/messages.
 func (h *Handler) HandleSendMessage(w http.ResponseWriter, r *http.Request) {
-	userID := r.PathValue("userId")
+	userID := chi.URLParam(r, "userId")
 
 	var req sendMessageRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

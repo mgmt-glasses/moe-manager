@@ -1,7 +1,9 @@
 package screentime
 
 import (
+	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -9,11 +11,18 @@ import (
 	"github.com/mgmt-glasses/moe-manager/internal/shared"
 )
 
-type Handler struct {
-	svc *Service
+type ServiceInterface interface {
+	UpsertRecord(ctx context.Context, userID string, date time.Time, minutes, targetMinutes int) (*ScreenTimeRecord, error)
+	GetRecord(ctx context.Context, userID string, date time.Time) (*ScreenTimeRecord, error)
+	ListRecords(ctx context.Context, userID string, fromDate, toDate time.Time) ([]ScreenTimeRecord, error)
+	Analyze(ctx context.Context, base64Data, mimeType string) (*AnalysisResult, error)
 }
 
-func NewHandler(svc *Service) *Handler {
+type Handler struct {
+	svc ServiceInterface
+}
+
+func NewHandler(svc ServiceInterface) *Handler {
 	return &Handler{svc: svc}
 }
 
@@ -160,7 +169,8 @@ func (h *Handler) Analyze(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.svc.Analyze(r.Context(), req.Image, req.MimeType)
 	if err != nil {
-		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "画像解析に失敗しました: "+err.Error())
+		log.Printf("analyze error: %v", err)
+		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "画像解析に失敗しました")
 		return
 	}
 

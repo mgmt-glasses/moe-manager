@@ -18,29 +18,15 @@ func NewService(repo Repository, analyzer ImageAnalyzer) *Service {
 }
 
 func (s *Service) UpsertRecord(ctx context.Context, userID string, date time.Time, minutes, targetMinutes int) (*ScreenTimeRecord, error) {
-	existing, err := s.repo.GetByDate(ctx, userID, date)
-	if err != nil {
-		return nil, err
-	}
-
-	var rec ScreenTimeRecord
 	now := time.Now()
-
-	if existing != nil {
-		rec = *existing
-		rec.Minutes = minutes
-		rec.TargetMinutes = targetMinutes
-		rec.UpdatedAt = now
-	} else {
-		rec = ScreenTimeRecord{
-			RecordID:      "ent_" + uuid.New().String(),
-			UserID:        userID,
-			Date:          date,
-			Minutes:       minutes,
-			TargetMinutes: targetMinutes,
-			CreatedAt:     now,
-			UpdatedAt:     now,
-		}
+	rec := ScreenTimeRecord{
+		RecordID:      "ent_" + uuid.New().String(),
+		UserID:        userID,
+		Date:          date,
+		Minutes:       minutes,
+		TargetMinutes: targetMinutes,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 
 	rec.CalculateDiff()

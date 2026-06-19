@@ -64,9 +64,9 @@ func (s *Service) Generate(ctx context.Context, userID, characterID, voicePreset
 		return VoiceFile{}, fmt.Errorf("save audio: %w", err)
 	}
 	if err := s.repo.Save(ctx, vf); err != nil {
-		if delErr := s.storage.Delete(ctx, vf.ID); delErr != nil {
-			log.Printf("voice Generate: compensating delete failed for %s: %v", vf.ID, delErr)
-		}
+		// audio file stays on disk as an orphan; unreachable via API since no DB record exists.
+		// a retry generates a new UUID and a new file, so the orphan can be cleaned up separately.
+		log.Printf("voice Generate: repo save failed, audio orphaned at %s: %v", vf.ID, err)
 		return VoiceFile{}, fmt.Errorf("save voice file record: %w", err)
 	}
 

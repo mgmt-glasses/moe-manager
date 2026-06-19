@@ -54,7 +54,7 @@ func (c *TTSHTTPClient) Synthesize(ctx context.Context, input voice.SynthesisInp
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(resp.Body)
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		return nil, fmt.Errorf("tts service returned %d: %s", resp.StatusCode, string(b))
 	}
 

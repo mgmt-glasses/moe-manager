@@ -21,7 +21,7 @@ type Handler struct {
 	svc voiceService
 }
 
-func NewHandler(svc *Service) *Handler {
+func NewHandler(svc voiceService) *Handler {
 	return &Handler{svc: svc}
 }
 
@@ -54,6 +54,8 @@ func (h *Handler) Generate(w http.ResponseWriter, r *http.Request) {
 	vf, err := h.svc.Generate(r.Context(), userID, body.CharacterID, body.VoicePresetID, body.Text)
 	if err != nil {
 		switch {
+		case errors.Is(err, ErrNoCharacterSelected):
+			shared.WriteError(w, http.StatusUnprocessableEntity, "NO_CHARACTER_SELECTED", "キャラクターが選択されていません")
 		case errors.Is(err, ErrForbidden):
 			shared.WriteError(w, http.StatusForbidden, "FORBIDDEN", "指定されたキャラクターはこのユーザーに選択されていません")
 		case errors.Is(err, ErrUserNotFound):

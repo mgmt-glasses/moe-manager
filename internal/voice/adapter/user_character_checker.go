@@ -31,7 +31,7 @@ func (c *PostgresUserCharacterChecker) GetSelectedCharacterID(ctx context.Contex
 		return "", fmt.Errorf("query user: %w", err)
 	}
 	if !selectedCharID.Valid {
-		return "", nil
+		return "", voice.ErrNoCharacterSelected
 	}
 	return selectedCharID.String, nil
 }

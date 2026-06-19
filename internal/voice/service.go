@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	ErrNotFound     = errors.New("voice file not found")
-	ErrUserNotFound = errors.New("user not found")
-	ErrForbidden    = errors.New("character does not belong to user")
+	ErrNotFound          = errors.New("voice file not found")
+	ErrUserNotFound      = errors.New("user not found")
+	ErrForbidden         = errors.New("character does not belong to user")
+	ErrNoCharacterSelected = errors.New("no character selected")
 )
 
 type Service struct {
@@ -32,6 +33,9 @@ func (s *Service) Generate(ctx context.Context, userID, characterID, voicePreset
 	selectedCharID, err := s.userChecker.GetSelectedCharacterID(ctx, userID)
 	if err != nil {
 		return VoiceFile{}, fmt.Errorf("check user: %w", err)
+	}
+	if selectedCharID == "" {
+		return VoiceFile{}, ErrNoCharacterSelected
 	}
 	if selectedCharID != characterID {
 		return VoiceFile{}, ErrForbidden

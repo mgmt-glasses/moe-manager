@@ -34,4 +34,12 @@ Accepted / Deprecated / Superseded by ADR-XXXX
 
 | No. | タイトル | ステータス |
 |-----|---------|----------|
-| — | （まだ記録なし） | — |
+| [0001](0001-go-migration.md) | Go 言語への移行 | Accepted |
+| [0002](0002-postgresql-multi-tenant.md) | PostgreSQL 共有とマルチテナント | Accepted |
+| [0003](0003-hexagonal-architecture.md) | ヘキサゴナルアーキテクチャ | Accepted |
+| [0004](0004-screentime-aggregation.md) | スクリーンタイム集計 | Accepted |
+| [0005](0005-document-restructure.md) | ドキュメント再編 | Accepted |
+| [0006](0006-llm-context-caching.md) | LLM コンテキストキャッシュ | Accepted |
+| [0007](0007-tts-decoupling.md) | TTS 分離 | Accepted |
+| [0008](0008-langextract-integration.md) | LangExtract 統合 | Accepted |
+| [0009](0009-deployment-cloud-run-cloud-sql.md) | デプロイ構成 Cloud Run + Cloud SQL | Accepted |

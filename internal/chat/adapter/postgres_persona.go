@@ -24,7 +24,7 @@ func (r *PostgresPersonaRepository) Get(ctx context.Context, characterID string)
 		characterID,
 	).Scan(&fragment)
 	if errors.Is(err, sql.ErrNoRows) {
-		return chat.Persona{}, fmt.Errorf("character %s not found", characterID)
+		return chat.Persona{}, fmt.Errorf("character %s: %w", characterID, chat.ErrPersonaNotFound)
 	}
 	if err != nil {
 		return chat.Persona{}, fmt.Errorf("query persona: %w", err)

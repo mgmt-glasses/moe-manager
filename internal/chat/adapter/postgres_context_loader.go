@@ -3,6 +3,7 @@ package chatadapter
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/mgmt-glasses/moe-manager/internal/chat"
@@ -24,6 +25,9 @@ func (l *PostgresChatContextLoader) Load(ctx context.Context, userID string) (ch
 		`SELECT selected_character_id, target_entertainment_minutes FROM users WHERE id = $1`,
 		userID,
 	).Scan(&selectedCharID, &targetMinutes)
+	if errors.Is(err, sql.ErrNoRows) {
+		return chat.ChatContext{}, chat.ErrUserNotFound
+	}
 	if err != nil {
 		return chat.ChatContext{}, fmt.Errorf("query user: %w", err)
 	}
@@ -80,7 +84,7 @@ func (l *PostgresChatContextLoader) loadScreenTimeSummary(ctx context.Context, u
 		`SELECT minutes FROM screentime_records WHERE user_id = $1 AND date = CURRENT_DATE`,
 		userID,
 	).Scan(&minutes)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return chat.ScreenTimeSummary{TodayMinutes: 0, TargetMinutes: targetMinutes}, nil
 	}
 	if err != nil {

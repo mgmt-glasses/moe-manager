@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/sync/singleflight"
 	"google.golang.org/genai"
 
 	"github.com/mgmt-glasses/moe-manager/internal/chat"
@@ -28,6 +29,7 @@ type VertexAILLMClient struct {
 	model  string
 	mu     sync.Mutex
 	caches map[string]cacheEntry
+	sf     singleflight.Group
 }
 
 func NewVertexAILLMClient(ctx context.Context, project, location, model string) (*VertexAILLMClient, error) {
@@ -66,20 +68,33 @@ func (c *VertexAILLMClient) getOrCreateCache(ctx context.Context, systemInstruct
 		return entry.cacheID, nil
 	}
 
-	cacheID, err := c.createCache(ctx, systemInstruction)
+	v, err, _ := c.sf.Do(key, func() (interface{}, error) {
+		c.mu.Lock()
+		entry, ok := c.caches[key]
+		c.mu.Unlock()
+		if ok && time.Now().Before(entry.expiresAt.Add(-cacheMinTTL)) {
+			return entry.cacheID, nil
+		}
+
+		cacheID, err := c.createCache(ctx, systemInstruction)
+		if err != nil {
+			return "", err
+		}
+
+		c.mu.Lock()
+		c.caches[key] = cacheEntry{
+			cacheID:   cacheID,
+			expiresAt: time.Now().Add(cacheTTL),
+		}
+		c.mu.Unlock()
+
+		log.Printf("vertexai: created context cache %s", cacheID)
+		return cacheID, nil
+	})
 	if err != nil {
 		return "", err
 	}
-
-	c.mu.Lock()
-	c.caches[key] = cacheEntry{
-		cacheID:   cacheID,
-		expiresAt: time.Now().Add(cacheTTL),
-	}
-	c.mu.Unlock()
-
-	log.Printf("vertexai: created context cache %s", cacheID)
-	return cacheID, nil
+	return v.(string), nil
 }
 
 func (c *VertexAILLMClient) createCache(ctx context.Context, systemInstruction string) (string, error) {

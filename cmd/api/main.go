@@ -69,6 +69,9 @@ func main() {
 	taskHandler := task.NewHandler(taskSvc)
 
 	vertexProject := os.Getenv("VERTEX_PROJECT")
+	if vertexProject == "" {
+		log.Fatalf("VERTEX_PROJECT is required")
+	}
 	vertexLocation := os.Getenv("VERTEX_LOCATION")
 	if vertexLocation == "" {
 		vertexLocation = "us-central1"

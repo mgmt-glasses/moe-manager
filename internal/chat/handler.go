@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // messageSender is the minimal interface Handler requires from the service layer.
@@ -59,7 +61,7 @@ type apiError struct {
 
 // HandleSendMessage handles POST /api/v1/users/{userId}/chat/messages.
 func (h *Handler) HandleSendMessage(w http.ResponseWriter, r *http.Request) {
-	userID := r.PathValue("userId")
+	userID := chi.URLParam(r, "userId")
 
 	var req sendMessageRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -76,11 +78,16 @@ func (h *Handler) HandleSendMessage(w http.ResponseWriter, r *http.Request) {
 		Message: req.Message,
 	})
 	if err != nil {
-		if errors.Is(err, ErrNoCharacterSelected) {
+		switch {
+		case errors.Is(err, ErrUserNotFound):
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "ユーザーが見つかりません")
+		case errors.Is(err, ErrNoCharacterSelected):
 			writeError(w, http.StatusUnprocessableEntity, "NO_CHARACTER_SELECTED", "キャラクターが選択されていません")
-			return
+		case errors.Is(err, ErrPersonaNotFound):
+			writeError(w, http.StatusUnprocessableEntity, "PERSONA_NOT_FOUND", "キャラクター設定が見つかりません")
+		default:
+			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "処理に失敗しました")
 		}
-		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "処理に失敗しました")
 		return
 	}
 

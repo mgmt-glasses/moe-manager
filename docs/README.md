@@ -27,6 +27,8 @@
   - API 設計の共通ルールとドメイン一覧です。
 - [DB 方針](database-guidelines.md)
   - PostgreSQL 採用、テーブル分類、マイグレーション方針です。
+- [テスト方針](testing-guidelines.md)
+  - fake の配置、service/handler テストの書き方、ドメインごとのテスト実装状況です。
 - [ドキュメント運用](documentation-guidelines.md)
   - ドキュメントを増やす・更新するときのルールです。
 

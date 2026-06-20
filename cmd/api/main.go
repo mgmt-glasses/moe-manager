@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net/http"
@@ -17,6 +18,8 @@ import (
 	migrations "github.com/mgmt-glasses/moe-manager/migrations"
 	"github.com/mgmt-glasses/moe-manager/internal/character"
 	charadapter "github.com/mgmt-glasses/moe-manager/internal/character/adapter"
+	"github.com/mgmt-glasses/moe-manager/internal/chat"
+	chatadapter "github.com/mgmt-glasses/moe-manager/internal/chat/adapter"
 	"github.com/mgmt-glasses/moe-manager/internal/statistics"
 	statsadapter "github.com/mgmt-glasses/moe-manager/internal/statistics/adapter"
 	"github.com/mgmt-glasses/moe-manager/internal/task"
@@ -30,6 +33,8 @@ import (
 var _ user.CharacterValidator = (*charadapter.PostgresCharacterRepository)(nil)
 
 func main() {
+	ctx := context.Background()
+
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		dbURL = "postgresql://postgres:postgres@localhost:5432/moe"
@@ -64,6 +69,29 @@ func main() {
 	taskRepo := taskadapter.NewPostgresTaskRepository(db)
 	taskSvc := task.NewService(taskRepo)
 	taskHandler := task.NewHandler(taskSvc)
+
+	vertexProject := os.Getenv("VERTEX_PROJECT")
+	if vertexProject == "" {
+		log.Fatalf("VERTEX_PROJECT is required")
+	}
+	vertexLocation := os.Getenv("VERTEX_LOCATION")
+	if vertexLocation == "" {
+		vertexLocation = "us-central1"
+	}
+	vertexModel := os.Getenv("VERTEX_MODEL")
+	if vertexModel == "" {
+		vertexModel = "gemini-1.5-flash-001"
+	}
+
+	llmClient, err := chatadapter.NewVertexAILLMClient(ctx, vertexProject, vertexLocation, vertexModel)
+	if err != nil {
+		log.Fatalf("failed to create vertex ai client: %v", err)
+	}
+
+	chatContextLoader := chatadapter.NewPostgresChatContextLoader(db)
+	personaRepo := chatadapter.NewPostgresPersonaRepository(db)
+	chatSvc := chat.NewService(llmClient, chatContextLoader, personaRepo, nil)
+	chatHandler := chat.NewHandler(chatSvc)
 
 	ttsURL := os.Getenv("TTS_SERVICE_URL")
 	if ttsURL == "" {
@@ -109,6 +137,7 @@ func main() {
 		r.Patch("/tasks/{taskId}/reopen", taskHandler.Reopen)
 		r.Delete("/tasks/{taskId}", taskHandler.Delete)
 
+		r.Post("/chat/messages", chatHandler.HandleSendMessage)
 		r.Post("/voices", voiceHandler.Generate)
 		r.Get("/voice-files/{voiceFileId}", voiceHandler.GetAudio)
 	})

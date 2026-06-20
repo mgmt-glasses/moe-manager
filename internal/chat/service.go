@@ -7,8 +7,11 @@ import (
 	"time"
 )
 
-// ErrNoCharacterSelected is returned when the user has no selected character.
-var ErrNoCharacterSelected = errors.New("no character selected")
+var (
+	ErrNoCharacterSelected = errors.New("no character selected")
+	ErrUserNotFound        = errors.New("user not found")
+	ErrPersonaNotFound     = errors.New("persona not found")
+)
 
 // Service handles chat message generation.
 type Service struct {

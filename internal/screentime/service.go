@@ -2,11 +2,13 @@ package screentime
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+var ErrAnalyzerUnavailable = errors.New("analyzer not configured")
 
 type Service struct {
 	repo     Repository
@@ -19,13 +21,26 @@ func NewService(repo Repository, analyzer ImageAnalyzer) *Service {
 
 func (s *Service) UpsertRecord(ctx context.Context, userID string, date time.Time, minutes, targetMinutes int) (*ScreenTimeRecord, error) {
 	now := time.Now()
+
+	existing, err := s.repo.GetByDate(ctx, userID, date)
+	if err != nil {
+		return nil, err
+	}
+
+	recordID := "ent_" + uuid.New().String()
+	createdAt := now
+	if existing != nil {
+		recordID = existing.RecordID
+		createdAt = existing.CreatedAt
+	}
+
 	rec := ScreenTimeRecord{
-		RecordID:      "ent_" + uuid.New().String(),
+		RecordID:      recordID,
 		UserID:        userID,
 		Date:          date,
 		Minutes:       minutes,
 		TargetMinutes: targetMinutes,
-		CreatedAt:     now,
+		CreatedAt:     createdAt,
 		UpdatedAt:     now,
 	}
 
@@ -62,7 +77,7 @@ func (s *Service) ListRecords(ctx context.Context, userID string, fromDate, toDa
 
 func (s *Service) Analyze(ctx context.Context, base64Data, mimeType string) (*AnalysisResult, error) {
 	if s.analyzer == nil {
-		return nil, fmt.Errorf("analyzer not configured")
+		return nil, ErrAnalyzerUnavailable
 	}
 	return s.analyzer.AnalyzeImage(ctx, base64Data, mimeType)
 }

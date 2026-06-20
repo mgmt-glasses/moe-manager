@@ -24,6 +24,13 @@ func NewGeminiImageAnalyzer(ctx context.Context, apiKey string) (*GeminiImageAna
 	return &GeminiImageAnalyzer{client: client}, nil
 }
 
+func (a *GeminiImageAnalyzer) Close() error {
+	if a.client != nil {
+		a.client.Close()
+	}
+	return nil
+}
+
 func (a *GeminiImageAnalyzer) AnalyzeImage(ctx context.Context, base64Data, mimeType string) (*screentime.AnalysisResult, error) {
 	// Remove data URI scheme prefix if present
 	if idx := strings.Index(base64Data, ","); idx != -1 {
@@ -45,7 +52,7 @@ func (a *GeminiImageAnalyzer) AnalyzeImage(ctx context.Context, base64Data, mime
 		return nil, fmt.Errorf("failed to generate content from gemini: %w", err)
 	}
 
-	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+	if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil || len(resp.Candidates[0].Content.Parts) == 0 {
 		return nil, fmt.Errorf("empty response from gemini")
 	}
 

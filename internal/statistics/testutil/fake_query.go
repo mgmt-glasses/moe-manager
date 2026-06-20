@@ -25,3 +25,25 @@ func (f *FakeQuery) GetDailyStats(_ context.Context, _ string, date time.Time) (
 	}
 	return statistics.DailyStats{Date: date}, nil
 }
+
+func (f *FakeQuery) GetRangeStats(_ context.Context, _ string, fromDate, toDate time.Time) ([]statistics.DailyStats, error) {
+	if f.Err != nil {
+		return nil, f.Err
+	}
+
+	daysCount := int(toDate.Sub(fromDate).Hours()/24) + 1
+	if daysCount <= 0 {
+		daysCount = 1
+	}
+
+	var results []statistics.DailyStats
+	for i := 0; i < daysCount; i++ {
+		d := fromDate.AddDate(0, 0, i)
+		if stats, ok := f.StatsByDate[d.Format("2006-01-02")]; ok {
+			results = append(results, stats)
+		} else {
+			results = append(results, statistics.DailyStats{Date: d})
+		}
+	}
+	return results, nil
+}

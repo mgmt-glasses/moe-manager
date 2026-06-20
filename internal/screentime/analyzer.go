@@ -16,4 +16,5 @@ type AnalysisResult struct {
 
 type ImageAnalyzer interface {
 	AnalyzeImage(ctx context.Context, base64Data, mimeType string) (*AnalysisResult, error)
+	Close() error
 }

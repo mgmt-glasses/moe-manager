@@ -3,6 +3,7 @@ package screentime
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -69,6 +70,7 @@ func (h *Handler) Upsert(w http.ResponseWriter, r *http.Request) {
 
 	rec, err := h.svc.UpsertRecord(r.Context(), userID, date, req.Minutes, req.TargetMinutes)
 	if err != nil {
+		log.Printf("upsert record error: %v", err)
 		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "保存に失敗しました")
 		return
 	}
@@ -91,6 +93,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 
 	rec, err := h.svc.GetRecord(r.Context(), userID, date)
 	if err != nil {
+		log.Printf("get record error: %v", err)
 		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "取得に失敗しました")
 		return
 	}
@@ -132,6 +135,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 	records, err := h.svc.ListRecords(r.Context(), userID, fromDate, toDate)
 	if err != nil {
+		log.Printf("list records error: %v", err)
 		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "一覧の取得に失敗しました")
 		return
 	}
@@ -170,6 +174,10 @@ func (h *Handler) Analyze(w http.ResponseWriter, r *http.Request) {
 	result, err := h.svc.Analyze(r.Context(), req.Image, req.MimeType)
 	if err != nil {
 		log.Printf("analyze error: %v", err)
+		if errors.Is(err, ErrAnalyzerUnavailable) {
+			shared.WriteError(w, http.StatusServiceUnavailable, "SERVICE_UNAVAILABLE", "画像解析機能は現在利用できません")
+			return
+		}
 		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "画像解析に失敗しました")
 		return
 	}

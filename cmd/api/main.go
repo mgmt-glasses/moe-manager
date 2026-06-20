@@ -77,6 +77,7 @@ func main() {
 		analyzer, err := screentimeadapter.NewGeminiImageAnalyzer(context.Background(), geminiKey)
 		if err == nil {
 			screentimeAnalyzer = analyzer
+			defer screentimeAnalyzer.Close()
 		} else {
 			log.Printf("warning: failed to init gemini analyzer: %v", err)
 		}

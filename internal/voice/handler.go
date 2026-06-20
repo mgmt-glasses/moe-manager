@@ -61,6 +61,7 @@ func (h *Handler) Generate(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, ErrUserNotFound):
 			shared.WriteError(w, http.StatusNotFound, "NOT_FOUND", "ユーザーが見つかりません")
 		default:
+			log.Printf("voice Generate: unexpected error for user %s: %v", userID, err)
 			shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "音声生成に失敗しました")
 		}
 		return

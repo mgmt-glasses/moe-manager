@@ -34,9 +34,6 @@ func (s *Service) Generate(ctx context.Context, userID, characterID, voicePreset
 	if err != nil {
 		return VoiceFile{}, fmt.Errorf("check user: %w", err)
 	}
-	if selectedCharID == "" {
-		return VoiceFile{}, ErrNoCharacterSelected
-	}
 	if selectedCharID != characterID {
 		return VoiceFile{}, ErrForbidden
 	}

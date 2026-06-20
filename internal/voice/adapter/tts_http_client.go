@@ -58,7 +58,8 @@ func (c *TTSHTTPClient) Synthesize(ctx context.Context, input voice.SynthesisInp
 		return nil, fmt.Errorf("tts service returned %d: %s", resp.StatusCode, string(b))
 	}
 
-	audio, err := io.ReadAll(resp.Body)
+	const maxAudioBytes = 50 * 1024 * 1024 // 50 MB
+	audio, err := io.ReadAll(io.LimitReader(resp.Body, maxAudioBytes))
 	if err != nil {
 		return nil, fmt.Errorf("read audio: %w", err)
 	}

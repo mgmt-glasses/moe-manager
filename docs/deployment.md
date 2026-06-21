@@ -110,6 +110,23 @@ Cloud Run 側で設定される環境変数です（`deploy.yml` 参照）。
 | `VERTEX_MODEL` | Variables | 使用する Gemini モデル |
 | `PORT` | Cloud Run 自動注入 | リッスンポート（デフォルト 8080） |
 
+## コスト管理
+
+検証で使わない間は課金を抑えられます。
+
+- **Cloud Run**: リクエストが無ければ自動でゼロインスタンスまで縮退し、ほぼ課金されません（`--min-instances` を 0 のままにする）。
+- **Cloud SQL**: インスタンスは起動中ずっと課金されます。使わない間は停止します。
+
+```bash
+# Cloud SQL を停止（課金を抑える）
+gcloud sql instances patch moe-manager-db --activation-policy=NEVER --project=moe-manager
+
+# 再開（デプロイ前に起動しておく）
+gcloud sql instances patch moe-manager-db --activation-policy=ALWAYS --project=moe-manager
+```
+
+停止中は API が DB に接続できず起動時マイグレーションも失敗するため、デプロイ前に必ず再開してください。
+
 ## 注意点
 
 ### 音声ファイルの永続化

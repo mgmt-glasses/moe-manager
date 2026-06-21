@@ -21,7 +21,7 @@ Go API を **Cloud Run** にデプロイする。
 - **DB**: Cloud SQL（マネージド PostgreSQL）に接続する。Cloud Run からは `--add-cloudsql-instances` で接続し、`DATABASE_URL` は Secret Manager で管理する。
 - **ビルド**: Dockerfile から `docker build` でイメージを作り、Artifact Registry に push する。GitHub Actions の `deploy.yml` がこれを担う。
 - **CI/CD**: GitHub Actions + Workload Identity Federation（長期キーなし）。
-- **デプロイ対象ブランチ**: `main`（push で本番自動デプロイ）。検証時は `workflow_dispatch` で手動実行する。
+- **デプロイ対象ブランチ**: `develop`（デフォルトブランチかつ検証/ステージング環境）。push で自動デプロイし、`workflow_dispatch` でも手動実行できる。本番（`main`）デプロイは認証導入とあわせて別途整備する。
 - **TTS**: 当面デプロイ対象外。`TTS_SERVICE_URL` 未設定でも API は起動し、音声機能のみ縮退する。
 
 ## 理由

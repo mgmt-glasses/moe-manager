@@ -89,13 +89,15 @@ gcloud iam service-accounts create github-deployer
 
 ## デプロイ実行
 
+`deploy.yml` がデフォルトブランチ（`develop`）に存在する状態で有効になります。本 PR をマージ後に利用できます。
+
 ### 手動デプロイ（検証用）
 
 GitHub の Actions タブから **Deploy to Cloud Run** ワークフローを `workflow_dispatch` で実行します。
 
-### 自動デプロイ（本番）
+### 自動デプロイ（検証/ステージング）
 
-`main` ブランチへの push 時に自動でデプロイされます。
+`develop` ブランチへの push 時に自動でデプロイされます。本番（`main`）デプロイは認証導入とあわせて別途整備します。
 
 ## 実行時環境変数
 

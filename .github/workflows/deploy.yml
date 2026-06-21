@@ -1,12 +1,13 @@
 name: Deploy to Cloud Run
 
-# 手動トリガー（検証用）と main push（本番自動デプロイ）の両方に対応する。
+# 手動トリガー（検証用）と develop push（検証環境への自動デプロイ）の両方に対応する。
+# develop はデフォルトブランチかつ検証/ステージング用。
 # 初期はインフラ未整備のため workflow_dispatch で動作確認し、
-# 安定後に main push 自動デプロイへ移行する想定。
+# 安定後に develop push 自動デプロイへ移行する想定。
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [develop]
 
 # Workload Identity Federation の OIDC トークン取得に必要
 permissions:

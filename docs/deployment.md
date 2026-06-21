@@ -37,12 +37,11 @@ gcloud sql databases create moe_manager --instance=moe-manager-db
 
 ```bash
 # DATABASE_URL（Cloud SQL の Unix socket 経由）
-# 形式: postgres://USER:PASS@/moe_manager?host=/cloudsql/PROJECT:REGION:INSTANCE
+# 形式: postgres://USER:PASS@/moe_manager?host=/cloudsql/PROJECT:REGION:INSTANCE&sslmode=disable
 echo -n "postgres://..." | gcloud secrets create DATABASE_URL --data-file=-
-
-# TTS サービス URL
-echo -n "https://..." | gcloud secrets create TTS_SERVICE_URL --data-file=-
 ```
+
+`TTS_SERVICE_URL` は TTS サービスをデプロイするまで作成しません。未設定時は API が `http://localhost:8001` にフォールバックし、音声機能のみ縮退します（`cmd/api/main.go`）。空文字の Secret はバージョンが作られず `:latest` 参照で起動に失敗するため、値が用意できるまで Secret 自体を作らず `deploy.yml` の `--set-secrets` からも外しておきます。
 
 ### 3. Workload Identity Federation 設定
 
@@ -104,7 +103,7 @@ Cloud Run 側で設定される環境変数です（`deploy.yml` 参照）。
 | 環境変数 | ソース | 説明 |
 |----------|--------|------|
 | `DATABASE_URL` | Secret Manager | Cloud SQL 接続文字列 |
-| `TTS_SERVICE_URL` | Secret Manager | TTS サービスの URL |
+| `TTS_SERVICE_URL` | Secret Manager | TTS サービスの URL（TTS デプロイ後に追加。未設定時は縮退） |
 | `VERTEX_PROJECT` | Variables | GCP プロジェクト ID |
 | `VERTEX_LOCATION` | Variables | Vertex AI のリージョン |
 | `VERTEX_MODEL` | Variables | 使用する Gemini モデル |

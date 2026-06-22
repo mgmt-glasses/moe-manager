@@ -17,7 +17,26 @@ Go API を GCP Cloud Run にデプロイする手順をまとめます。
 
 ## 事前準備（初回のみ）
 
-### 1. GCP リソース作成
+### 1. 必要な API の有効化
+
+```bash
+PROJECT_ID=moe-manager
+
+gcloud services enable \
+  run.googleapis.com \
+  artifactregistry.googleapis.com \
+  cloudbuild.googleapis.com \
+  secretmanager.googleapis.com \
+  sqladmin.googleapis.com \
+  iamcredentials.googleapis.com \
+  sts.googleapis.com \
+  aiplatform.googleapis.com \
+  --project=$PROJECT_ID
+```
+
+`sqladmin`（Cloud SQL）と `cloudbuild`（`gcloud run deploy --source` のビルド）は忘れやすいので注意します。
+
+### 2. GCP リソース作成
 
 ```bash
 PROJECT_ID=moe-manager
@@ -25,15 +44,20 @@ REGION=us-central1
 
 # Artifact Registry リポジトリ
 gcloud artifacts repositories create moe-manager \
-  --repository-format=docker --location=$REGION
+  --repository-format=docker --location=$REGION --project=$PROJECT_ID
 
 # Cloud SQL (PostgreSQL) インスタンス
+# デフォルト Edition は ENTERPRISE_PLUS で db-f1-micro を受け付けないため
+# --edition=ENTERPRISE を明示する。
 gcloud sql instances create moe-manager-db \
-  --database-version=POSTGRES_16 --tier=db-f1-micro --region=$REGION
-gcloud sql databases create moe_manager --instance=moe-manager-db
+  --database-version=POSTGRES_16 --edition=ENTERPRISE \
+  --tier=db-f1-micro --region=$REGION --project=$PROJECT_ID
+gcloud sql databases create moe_manager --instance=moe-manager-db --project=$PROJECT_ID
+gcloud sql users set-password postgres --instance=moe-manager-db \
+  --password='<PASS>' --project=$PROJECT_ID
 ```
 
-### 2. Secret Manager にシークレット登録
+### 3. Secret Manager にシークレット登録
 
 ```bash
 # DATABASE_URL（Cloud SQL の Unix socket 経由）
@@ -43,31 +67,56 @@ echo -n "postgres://..." | gcloud secrets create DATABASE_URL --data-file=-
 
 `TTS_SERVICE_URL` は TTS サービスをデプロイするまで作成しません。未設定時は API が `http://localhost:8001` にフォールバックし、音声機能のみ縮退します（`cmd/api/main.go`）。空文字の Secret はバージョンが作られず `:latest` 参照で起動に失敗するため、値が用意できるまで Secret 自体を作らず `deploy.yml` の `--set-secrets` からも外しておきます。
 
-### 3. Workload Identity Federation 設定
+### 4. IAM 設定（WIF・サービスアカウント・ロール）
 
-GitHub Actions が長期キーなしで GCP 認証するための設定です。
+GitHub Actions が長期キーなしで GCP 認証するための設定と、各サービスアカウントへのロール付与です。
 
 ```bash
+PROJECT_ID=moe-manager
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+REPO=mgmt-glasses/moe-manager
+
 # Workload Identity プール
 gcloud iam workload-identity-pools create github-pool \
-  --location=global --display-name="GitHub Actions Pool"
+  --location=global --display-name="GitHub Actions Pool" --project=$PROJECT_ID
 
 # OIDC プロバイダ（リポジトリを限定）
 gcloud iam workload-identity-pools providers create-oidc github-provider \
   --location=global --workload-identity-pool=github-pool \
   --issuer-uri="https://token.actions.githubusercontent.com" \
   --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
-  --attribute-condition="assertion.repository=='mgmt-glasses/moe-manager'"
+  --attribute-condition="assertion.repository=='${REPO}'" --project=$PROJECT_ID
 
 # デプロイ用サービスアカウント
-gcloud iam service-accounts create github-deployer
+gcloud iam service-accounts create github-deployer --project=$PROJECT_ID
+DEPLOYER_SA="github-deployer@${PROJECT_ID}.iam.gserviceaccount.com"
 
-# 必要なロールを付与（run.admin, artifactregistry.writer, cloudsql.client, iam.serviceAccountUser）
+# デプロイ用 SA にロール付与
+for ROLE in roles/run.admin roles/artifactregistry.writer roles/cloudsql.client \
+            roles/iam.serviceAccountUser roles/secretmanager.secretAccessor; do
+  gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:${DEPLOYER_SA}" --role="$ROLE" --condition=None
+done
+
+# WIF からデプロイ用 SA を借用できるようにする
+gcloud iam service-accounts add-iam-policy-binding "$DEPLOYER_SA" \
+  --role="roles/iam.workloadIdentityUser" \
+  --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/github-pool/attribute.repository/${REPO}"
+
+# ランタイム SA（Cloud Run 実行時の既定 = compute SA）にロール付与
+# Cloud Run が起動時に DB / Secret に到達し、Vertex AI を呼ぶために必要。
+# cloudbuild.builds.builder は `gcloud run deploy --source` のビルドに使う。
+COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+for ROLE in roles/cloudsql.client roles/secretmanager.secretAccessor \
+            roles/aiplatform.user roles/cloudbuild.builds.builder; do
+  gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:${COMPUTE_SA}" --role="$ROLE" --condition=None
+done
 ```
 
 詳細は [google-github-actions/auth の README](https://github.com/google-github-actions/auth) を参照してください。
 
-### 4. GitHub の Secrets / Variables 設定
+### 5. GitHub の Secrets / Variables 設定
 
 **Secrets**（機密情報）
 
@@ -90,11 +139,44 @@ gcloud iam service-accounts create github-deployer
 
 デプロイは**手動実行のみ**です。課金を抑えるため push による自動デプロイは行いません。`deploy.yml` がデフォルトブランチ（`develop`）に存在する状態で有効になります（本 PR をマージ後に利用可能）。
 
-### 手動デプロイ
+デプロイ前に Cloud SQL を起動しておきます（「コスト管理」参照）。
 
-GitHub の Actions タブから **Deploy to Cloud Run** ワークフローを `workflow_dispatch` で実行します。
+### 手動デプロイ（CI / 推奨）
+
+GitHub の Actions タブから **Deploy to Cloud Run** ワークフローを `workflow_dispatch` で実行します。`deploy.yml` がデフォルトブランチ（`develop`）にある必要があります。
 
 本番（`main`）への自動デプロイは認証導入とあわせて別途整備します。
+
+### ローカルから直接デプロイ（CI を介さない検証用）
+
+CI を待たずに手元から同じ構成でデプロイできます。`gcloud run deploy --source` は Cloud Build でビルドするため、ローカルに docker daemon は不要です。
+
+```bash
+gcloud run deploy moe-manager-api \
+  --source . \
+  --region us-central1 \
+  --project moe-manager \
+  --platform managed \
+  --allow-unauthenticated \
+  --add-cloudsql-instances moe-manager:us-central1:moe-manager-db \
+  --set-env-vars VERTEX_PROJECT=moe-manager,VERTEX_LOCATION=us-central1,VERTEX_MODEL=gemini-2.5-flash \
+  --set-secrets DATABASE_URL=DATABASE_URL:latest
+```
+
+初回は Artifact Registry の `cloud-run-source-deploy` リポジトリが自動作成されます。`TTS_SERVICE_URL` は未デプロイのため付けません（付けると空 Secret 参照で失敗します）。
+
+### 動作確認
+
+デプロイ完了時に出力される Service URL に対してヘルスチェックします。ヘルスエンドポイントは `/api/v1/health` です。
+
+```bash
+URL=$(gcloud run services describe moe-manager-api --region us-central1 \
+  --project moe-manager --format='value(status.url)')
+curl -s "$URL/api/v1/health"      # => {"status":"ok"}
+curl -s "$URL/api/v1/characters"  # => キャラクター一覧（DB 疎通確認）
+```
+
+`/api/v1/health` が 200、`/api/v1/characters` が実データを返せば、マイグレーション適用・DB 接続・API 稼働まで成功しています。
 
 ## 実行時環境変数
 

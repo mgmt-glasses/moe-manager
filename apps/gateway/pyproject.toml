@@ -9,7 +9,6 @@ dependencies = [
     "moe-user",
     "moe-character",
     "moe-task",
-    "moe-screentime",
     "moe-statistics",
     "voice-library",
 ]

@@ -616,12 +616,111 @@ audio.play();
 
 ---
 
+## 娯楽時間管理 (ScreenTime)
+
+### 画像解析 (Gemini API)
+
+スクリーンタイムの画像を解析し、利用時間を自動抽出します。
+
+```
+POST /api/v1/users/{userId}/screentime/analyze
+```
+
+**リクエスト**
+
+```json
+{
+  "image": "<Base64エンコードされた画像データ>",
+  "mime_type": "image/jpeg"
+}
+```
+
+**レスポンス** `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "category": "動画（YouTubeなど）",
+        "minutes": 120
+      }
+    ],
+    "total_minutes": 120
+  },
+  "error": null
+}
+```
+
+---
+
+### 娯楽時間の登録・更新
+
+```
+POST /api/v1/users/{userId}/screentime/{date}
+```
+
+`{date}` は `YYYY-MM-DD` 形式。
+
+**リクエスト**
+
+```json
+{
+  "minutes": 120,
+  "target_minutes": 60
+}
+```
+
+**レスポンス** `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "record_id": "abc123-...",
+    "user_id": "7c1e710b-...",
+    "date": "2026-06-20",
+    "minutes": 120,
+    "target_minutes": 60,
+    "diff_minutes": 60
+  },
+  "error": null
+}
+```
+
+---
+
+### 娯楽時間の取得
+
+```
+GET /api/v1/users/{userId}/screentime/{date}
+```
+
+**レスポンス** `200 OK`（登録・更新と同じ形式）
+
+---
+
+### 娯楽時間の一覧取得
+
+```
+GET /api/v1/users/{userId}/screentime?from=2026-06-01&to=2026-06-20
+```
+
+| クエリパラメータ | 型 | 必須 | 説明 |
+|----------------|-----|------|------|
+| `from` | string | - | 取得開始日（YYYY-MM-DD）。省略時は7日前 |
+| `to` | string | - | 取得終了日（YYYY-MM-DD）。省略時は今日 |
+
+**レスポンス** `200 OK`（登録・更新の配列形式）
+
+---
+
 ## 実装予定
 
 以下は現在開発中または未実装のエンドポイントです。
 
 | 機能 | 状態 |
 |------|------|
-| スクリーンタイム記録 | PR #18 レビュー中 |
 | チャットログ保存 | 未実装（Issue 07） |
 | 音声ファイル一覧取得 | 未実装 |

@@ -641,7 +641,13 @@ POST /api/v1/users/{userId}/screentime/analyze
 {
   "success": true,
   "data": {
-    "minutes": 120
+    "items": [
+      {
+        "category": "動画（YouTubeなど）",
+        "minutes": 120
+      }
+    ],
+    "total_minutes": 120
   },
   "error": null
 }

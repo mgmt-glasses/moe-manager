@@ -156,7 +156,7 @@ func main() {
 		r.Patch("/tasks/{taskId}/reopen", taskHandler.Reopen)
 		r.Delete("/tasks/{taskId}", taskHandler.Delete)
 
-		r.Post("/screentime", screentimeHandler.Upsert)
+		r.Post("/screentime/{date}", screentimeHandler.Upsert)
 		r.Get("/screentime/{date}", screentimeHandler.Get)
 		r.Get("/screentime", screentimeHandler.List)
 		r.Post("/screentime/analyze", screentimeHandler.Analyze)

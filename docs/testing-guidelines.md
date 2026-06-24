@@ -30,8 +30,8 @@
 ### やらないこと
 
 - `internal/<domain>/adapter/` の PostgreSQL 実装に対する統合テスト（実 DB 接続）は対象外とする。
-- 未実装のドメイン（`screentime`、`voice`、`chat-logs`）のテストは対象外とする。
-- `chat` の `cmd/api/main.go` 配線は対象外とする。理由は [既知の制限](#既知の制限) を参照。
+- 未実装のドメイン（`chat-logs`）のテストは対象外とする（`screentime`、`voice`は実装済み）。
+- `chat` の `cmd/api/main.go` 配線は、別対応として実施済みのため本ドキュメントの初期対応時の記録としては「対象外」とする。
 
 ## 実装方針
 
@@ -85,13 +85,12 @@ internal/<domain>/
 
 ## 既知の制限
 
-`internal/chat` には `LLMClient` / `ContextLoader` / `PersonaRepository` / `ChatLogger` の本番 adapter（`internal/chat/adapter/`）がまだ実装されていない。
-そのため `cmd/api/main.go` への `chat` ハンドラの配線は本対応では行わず、別 Issue（LLM 連携・他ドメイン横断のコンテキスト取得の実装）に持ち越している。
+現在、`internal/chat` の各種 adapter の実装および `cmd/api/main.go` へのハンドラの配線は完了済みです。
 
 ## 今後の対応
 
-- `screentime`、`voice`、`chat-logs` の各ドメインを実装する際は、本ドキュメントと同じ構成（`testutil` fake、`service_test.go`、`handler_test.go`）でテストを追加する。
-- `internal/chat/adapter` の実装後、`cmd/api/main.go` への配線とそれに伴う統合確認を別 Issue で行う。
+- 今後新しいドメイン（`chat-logs` 等）を実装する際は、本ドキュメントと同じ構成（`testutil` fake、`service_test.go`、`handler_test.go`）でテストを追加する。
+- (対応完了) `internal/chat/adapter` の実装後、`cmd/api/main.go` への配線とそれに伴う統合確認を別 Issue で行う。
 
 ## 参照ドキュメント
 

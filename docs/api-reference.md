@@ -183,7 +183,7 @@ PATCH /api/v1/users/{userId}/selected-character
 
 ```json
 {
-  "characterId": "char_enfj_001"
+  "characterId": "char_enfp_001"
 }
 ```
 
@@ -194,7 +194,7 @@ PATCH /api/v1/users/{userId}/selected-character
   "success": true,
   "data": {
     "userId": "7c1e710b-...",
-    "selectedCharacterId": "char_enfj_001"
+    "selectedCharacterId": "char_enfp_001"
   },
   "error": null
 }
@@ -212,19 +212,91 @@ GET /api/v1/characters
 
 **レスポンス** `200 OK`
 
+`data` は `mbti` 昇順で返す。
+
 ```json
 {
   "success": true,
   "data": [
     {
       "characterId": "char_enfj_001",
-      "name": "ルナ",
+      "name": "橘 葵",
       "mbti": "ENFJ",
-      "description": "社交的で共感力が高いキャラクター",
-      "tone": "明るく丁寧",
-      "voiceId": "preset_01",
+      "description": "情熱的で思いやりのある主人公型秘書。人を励ますことが得意で、前向きなエネルギーに満ちている。",
+      "tone": "明るく温かみのある口調。社長を常に励まし、ポジティブな言葉を大切にする。",
+      "voiceId": "voice_enfj_001",
       "iconUrl": "/assets/characters/enfj/icon.png",
       "standingImageUrl": "/assets/characters/enfj/standing.png"
+    },
+    {
+      "characterId": "char_enfp_001",
+      "name": "星野 みゆ",
+      "mbti": "ENFP",
+      "description": "明るく発想豊かな広報型秘書。小さな変化にも気づき、社長の気持ちを軽くする提案が得意。",
+      "tone": "親しみやすく弾む口調。前向きな相づちと柔らかい励ましを大切にする。",
+      "voiceId": "voice_enfp_001",
+      "iconUrl": "/assets/characters/enfp/icon.png",
+      "standingImageUrl": "/assets/characters/enfp/standing.png"
+    },
+    {
+      "characterId": "char_entj_001",
+      "name": "神崎 玲",
+      "mbti": "ENTJ",
+      "description": "決断力があり推進力のある指揮官型秘書。優先順位をはっきりさせ、社長を実行へ導く。",
+      "tone": "自信があり簡潔な口調。厳しすぎず、目的と期限を明確に伝える。",
+      "voiceId": "voice_entj_001",
+      "iconUrl": "/assets/characters/entj/icon.png",
+      "standingImageUrl": "/assets/characters/entj/standing.png"
+    },
+    {
+      "characterId": "char_entp_001",
+      "name": "早乙女 レナ",
+      "mbti": "ENTP",
+      "description": "軽快でアイデア豊富な討論型秘書。停滞した状況に別角度の選択肢を出すことが得意。",
+      "tone": "テンポがよく少し茶目っ気のある口調。冗談は控えめにしつつ、行動につながる提案をする。",
+      "voiceId": "voice_entp_001",
+      "iconUrl": "/assets/characters/entp/icon.png",
+      "standingImageUrl": "/assets/characters/entp/standing.png"
+    },
+    {
+      "characterId": "char_infj_001",
+      "name": "月城 紬",
+      "mbti": "INFJ",
+      "description": "静かで洞察力のある提案型秘書。社長の本音をくみ取り、無理のない行動に落とし込む。",
+      "tone": "穏やかで丁寧な口調。急かさず、安心感のある言葉を選ぶ。",
+      "voiceId": "voice_infj_001",
+      "iconUrl": "/assets/characters/infj/icon.png",
+      "standingImageUrl": "/assets/characters/infj/standing.png"
+    },
+    {
+      "characterId": "char_infp_001",
+      "name": "花守 ゆい",
+      "mbti": "INFP",
+      "description": "やさしく理想を大切にする仲介型秘書。社長の価値観を尊重しながら、続けやすい形に整える。",
+      "tone": "柔らかく親身な口調。否定せず、気持ちに寄り添ってから背中を押す。",
+      "voiceId": "voice_infp_001",
+      "iconUrl": "/assets/characters/infp/icon.png",
+      "standingImageUrl": "/assets/characters/infp/standing.png"
+    },
+    {
+      "characterId": "char_intj_001",
+      "name": "黒瀬 真琴",
+      "mbti": "INTJ",
+      "description": "冷静で戦略的な設計型秘書。目標から逆算し、最短で成果に近づく段取りを考える。",
+      "tone": "落ち着いた端的な口調。感情に寄りすぎず、次の一手を明確に示す。",
+      "voiceId": "voice_intj_001",
+      "iconUrl": "/assets/characters/intj/icon.png",
+      "standingImageUrl": "/assets/characters/intj/standing.png"
+    },
+    {
+      "characterId": "char_intp_001",
+      "name": "蒼井 凛",
+      "mbti": "INTP",
+      "description": "論理的で分析的な哲学者型秘書。物事を深く考え、合理的な解決策を提示することが得意。",
+      "tone": "クールで端的な口調。無駄を省き、本質を突く言葉を選ぶ。",
+      "voiceId": "voice_intp_001",
+      "iconUrl": "/assets/characters/intp/icon.png",
+      "standingImageUrl": "/assets/characters/intp/standing.png"
     }
   ],
   "error": null
@@ -245,15 +317,15 @@ GET /api/v1/characters/{characterId}
 {
   "success": true,
   "data": {
-    "characterId": "char_enfj_001",
-    "name": "ルナ",
-    "mbti": "ENFJ",
-    "description": "社交的で共感力が高いキャラクター",
-    "tone": "明るく丁寧",
-    "voiceId": "preset_01",
-    "iconUrl": "/assets/characters/enfj/icon.png",
-    "standingImageUrl": "/assets/characters/enfj/standing.png",
-    "sampleVoiceUrl": "/assets/characters/enfj/sample.wav"
+    "characterId": "char_enfp_001",
+    "name": "星野 みゆ",
+    "mbti": "ENFP",
+    "description": "明るく発想豊かな広報型秘書。小さな変化にも気づき、社長の気持ちを軽くする提案が得意。",
+    "tone": "親しみやすく弾む口調。前向きな相づちと柔らかい励ましを大切にする。",
+    "voiceId": "voice_enfp_001",
+    "iconUrl": "/assets/characters/enfp/icon.png",
+    "standingImageUrl": "/assets/characters/enfp/standing.png",
+    "sampleVoiceUrl": "/assets/characters/enfp/sample.wav"
   },
   "error": null
 }

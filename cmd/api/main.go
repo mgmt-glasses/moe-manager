@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -15,7 +17,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/lib/pq"
 
-	migrations "github.com/mgmt-glasses/moe-manager/migrations"
 	"github.com/mgmt-glasses/moe-manager/internal/character"
 	charadapter "github.com/mgmt-glasses/moe-manager/internal/character/adapter"
 	"github.com/mgmt-glasses/moe-manager/internal/chat"
@@ -28,6 +29,7 @@ import (
 	useradapter "github.com/mgmt-glasses/moe-manager/internal/user/adapter"
 	"github.com/mgmt-glasses/moe-manager/internal/voice"
 	voiceadapter "github.com/mgmt-glasses/moe-manager/internal/voice/adapter"
+	migrations "github.com/mgmt-glasses/moe-manager/migrations"
 )
 
 var _ user.CharacterValidator = (*charadapter.PostgresCharacterRepository)(nil)
@@ -101,7 +103,16 @@ func main() {
 	if voiceAudioDir == "" {
 		voiceAudioDir = "data/voices"
 	}
-	voiceSynthesizer := voiceadapter.NewTTSHTTPClient(ttsURL)
+	// TTS_TIMEOUT_SECONDS: TTS のコールドスタート対策で timeout を可変にする（未設定/不正は 150 秒）。
+	ttsTimeout := 150 * time.Second
+	if v := os.Getenv("TTS_TIMEOUT_SECONDS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			ttsTimeout = time.Duration(n) * time.Second
+		} else {
+			log.Printf("invalid TTS_TIMEOUT_SECONDS %q, using default %s", v, ttsTimeout)
+		}
+	}
+	voiceSynthesizer := voiceadapter.NewTTSHTTPClient(ttsURL, ttsTimeout)
 	voiceStorage := voiceadapter.NewLocalAudioStorage(voiceAudioDir)
 	voiceRepo := voiceadapter.NewPostgresVoiceFileRepository(db)
 	voiceUserChecker := voiceadapter.NewPostgresUserCharacterChecker(db)

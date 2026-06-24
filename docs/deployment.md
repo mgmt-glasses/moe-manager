@@ -178,6 +178,32 @@ curl -s "$URL/api/v1/characters"  # => キャラクター一覧（DB 疎通確�
 
 `/api/v1/health` が 200、`/api/v1/characters` が実データを返せば、マイグレーション適用・DB 接続・API 稼働まで成功しています。
 
+## デプロイ済みエンドポイント
+
+- **Service URL**: `https://moe-manager-api-ydy2vlqfxa-uc.a.run.app`
+- この URL は Cloud Run がプロジェクト・サービス単位で割り当てる固定値で、再デプロイ（リビジョン更新）しても変わりません。
+- API は全て `/api/v1/` 配下にあります。例: `GET /api/v1/health`、`GET /api/v1/characters`。
+- ルートパス `/` はハンドラを定義していないため `404 page not found` を返しますが、これは正常です（障害ではありません）。動作確認は必ず `/api/v1/health` など API パスで行ってください。
+- 公開設定は `--allow-unauthenticated` のため、認証なしで誰でも到達できます（MVP 段階。認証は別途整備）。
+
+## フロントエンド（iOS アプリ）からの接続
+
+フロントエンドは iOS ネイティブアプリ（`moe-manger-frontend` の `MySecretary`）です。ブラウザを介さないため **CORS 設定は不要**です。
+
+接続先はアプリ内の **開発者設定（DeveloperSettings）画面**で切り替えます（`APIEnvironment` が `UserDefaults` に永続化）。
+
+- API モードは `mock` / `local` / `remote` の 3 種類で、初期値は `mock`。
+- 実際の分岐は `mock` か否かの 2 通りです（`MySecretaryApp.swift`）。`mock` のときはリモートリポジトリを生成せず、モックデータで動作します。`mock` 以外（`local` / `remote`）のときは `baseURL` から `APIClient` を生成し、実 API に接続します。
+- **`local` と `remote` に挙動差はありません**。どちらも接続先は `baseURL` で決まります（ラベル上の区別のみ）。
+- baseURL の初期値は `http://localhost:8081/api/v1`（ローカル開発用）。
+
+デプロイした Cloud Run の API に接続するには、開発者設定で次のように設定します。
+
+1. モードを `mock` 以外（**`local`** または **`remote`** のどちらでも可）に変更する。
+2. baseURL を **`https://moe-manager-api-ydy2vlqfxa-uc.a.run.app/api/v1`** に設定する（末尾の `/api/v1` まで含める）。
+
+接続先は手順 2 の baseURL のみで決まります。アプリ側のコード変更は不要で、設定値の切り替えのみで完結します。
+
 ## 実行時環境変数
 
 Cloud Run 側で設定される環境変数です（`deploy.yml` 参照）。

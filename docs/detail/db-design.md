@@ -33,7 +33,7 @@ DB内のデータは以下のカテゴリに分類する。
 
 ## 4. ID・日時の生成方針
 
-- **マスターデータ（`characters`）**: IDは固定文字列とし、アプリ同梱データとして migration の `INSERT` で投入する（例: `char_istj_001`）。アプリケーションコードから新規作成・削除しない。
+- **マスターデータ（`characters`）**: IDは固定文字列とし、アプリ同梱データとして migration の `INSERT` で投入する（例: `char_enfp_001`）。アプリケーションコードから新規作成・削除しない。
 - **ユーザデータ（`users`, `tasks`, `screentime_records`, `chat_logs`, `voice_files`）**: IDはアプリケーション層で UUID v4 を生成し（`uuid.NewString()`）、`TEXT` 型で保存する。DB側のデフォルト生成（`gen_random_uuid()` 等）は使わない。
 - **`created_at`**: 全テーブルで `TIMESTAMPTZ NOT NULL DEFAULT NOW()`。行作成時に確定し、以降変更しない。
 - **`updated_at`**: `characters`, `users`, `screentime_records` のみが持つ。`TIMESTAMPTZ NOT NULL DEFAULT NOW()` とし、UPDATE 時は repository 層が明示的に `NOW()` をSETする。DBトリガー（`ON UPDATE` 相当）は使わない。
@@ -47,9 +47,9 @@ DB内のデータは以下のカテゴリに分類する。
 
 | カラム | 型 | NULL | デフォルト | 説明 |
 | --- | --- | --- | --- | --- |
-| id | TEXT | NOT NULL | - | キャラクターID（例: `char_istj_001`） |
+| id | TEXT | NOT NULL | - | キャラクターID（例: `char_enfp_001`） |
 | name | TEXT | NOT NULL | - | キャラクター名 |
-| mbti_type | TEXT | NOT NULL | - | MBTIタイプ（例: `ISTJ`, `ENFJ`） |
+| mbti_type | TEXT | NOT NULL | - | MBTIタイプ（例: `ENFP`, `ENFJ`） |
 | personality_desc | TEXT | NOT NULL | - | 性格説明（AIプロンプト用） |
 | speech_style | TEXT | NOT NULL | - | 口調の定義（AIプロンプト用） |
 | system_prompt_fragment | TEXT | NOT NULL | - | AI用のシステムプロンプト断片 |

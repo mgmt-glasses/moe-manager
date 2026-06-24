@@ -34,4 +34,4 @@ Accepted / Deprecated / Superseded by ADR-XXXX
 
 | No. | タイトル | ステータス |
 |-----|---------|----------|
-| — | （まだ記録なし） | — |
+| [0009](0009-deployment-cloud-run-cloud-sql.md) | デプロイ構成 Cloud Run + Cloud SQL | Accepted |

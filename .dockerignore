@@ -1,0 +1,29 @@
+# Git
+.git
+.github
+.gitignore
+
+# ドキュメント
+docs
+*.md
+CONTRIBUTING.md
+CODEOWNERS
+
+# Python プロトタイプ・旧実装（Go ビルドに不要）
+packages
+apps
+.venv
+.uv_cache
+pyproject.toml
+
+# ローカル設定・データ
+.env
+.env.*
+data
+*.wav
+api
+
+# エディタ
+.editorconfig
+.tool-versions
+.claude

@@ -1,0 +1,59 @@
+name: Deploy to Cloud Run
+
+# 手動トリガー（workflow_dispatch）のみ。課金を抑えるため push 自動デプロイはしない。
+# デプロイは Actions タブから明示的に実行する。
+# workflow_dispatch を使うにはこのファイルがデフォルトブランチ（develop）に存在する必要がある。
+on:
+  workflow_dispatch:
+
+# Workload Identity Federation の OIDC トークン取得に必要
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  SERVICE_NAME: moe-manager-api
+  REGION: ${{ vars.GCP_REGION }}
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+
+jobs:
+  deploy:
+    name: build & deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push image
+        env:
+          IMAGE: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/moe-manager/${{ env.SERVICE_NAME }}:${{ github.sha }}
+        run: |
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Deploy to Cloud Run
+        env:
+          IMAGE: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/moe-manager/${{ env.SERVICE_NAME }}:${{ github.sha }}
+        run: |
+          gcloud run deploy "$SERVICE_NAME" \
+            --image="$IMAGE" \
+            --region="$REGION" \
+            --platform=managed \
+            --allow-unauthenticated \
+            --add-cloudsql-instances="${{ vars.CLOUD_SQL_INSTANCE }}" \
+            --set-env-vars="VERTEX_PROJECT=${{ env.PROJECT_ID }},VERTEX_LOCATION=${{ vars.VERTEX_LOCATION }},VERTEX_MODEL=${{ vars.VERTEX_MODEL }}" \
+            --set-secrets="DATABASE_URL=DATABASE_URL:latest"
+            # TTS_SERVICE_URL は TTS サービスをデプロイした時点で追記する。
+            # 未設定時は API 側で音声機能のみ縮退する（cmd/api/main.go のフォールバック）。

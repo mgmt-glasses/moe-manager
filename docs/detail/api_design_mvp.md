@@ -103,7 +103,7 @@ POST /api/v1/users
   "name": "太郎",
   "presidentName": "社長",
   "targetEntertainmentMinutes": 120,
-  "selectedCharacterId": "char_istj_001"
+  "selectedCharacterId": "char_enfp_001"
 }
 ```
 
@@ -117,7 +117,7 @@ POST /api/v1/users
     "name": "太郎",
     "presidentName": "社長",
     "targetEntertainmentMinutes": 120,
-    "selectedCharacterId": "char_istj_001",
+    "selectedCharacterId": "char_enfp_001",
     "createdAt": "2026-05-13T12:00:00+09:00"
   },
   "error": null
@@ -142,7 +142,7 @@ GET /api/v1/users/{userId}
     "name": "太郎",
     "presidentName": "社長",
     "targetEntertainmentMinutes": 120,
-    "selectedCharacterId": "char_istj_001",
+    "selectedCharacterId": "char_enfp_001",
     "createdAt": "2026-05-13T12:00:00+09:00"
   },
   "error": null
@@ -204,14 +204,14 @@ GET /api/v1/characters
   "success": true,
   "data": [
     {
-      "characterId": "char_istj_001",
-      "name": "白石 澪",
-      "mbti": "ISTJ",
-      "description": "真面目で几帳面な管理型秘書",
-      "tone": "丁寧で落ち着いた口調",
-      "voiceId": "voice_istj_001",
-      "iconUrl": "/assets/characters/istj/icon.png",
-      "standingImageUrl": "/assets/characters/istj/standing.png"
+      "characterId": "char_enfp_001",
+      "name": "星野 みゆ",
+      "mbti": "ENFP",
+      "description": "明るく発想豊かな広報型秘書",
+      "tone": "親しみやすく弾む口調",
+      "voiceId": "voice_enfp_001",
+      "iconUrl": "/assets/characters/enfp/icon.png",
+      "standingImageUrl": "/assets/characters/enfp/standing.png"
     }
   ],
   "error": null
@@ -232,15 +232,15 @@ GET /api/v1/characters/{characterId}
 {
   "success": true,
   "data": {
-    "characterId": "char_istj_001",
-    "name": "白石 澪",
-    "mbti": "ISTJ",
-    "description": "真面目で几帳面な管理型秘書",
-    "tone": "丁寧で落ち着いた口調",
-    "voiceId": "voice_istj_001",
-    "iconUrl": "/assets/characters/istj/icon.png",
-    "standingImageUrl": "/assets/characters/istj/standing.png",
-    "sampleVoiceUrl": "/assets/voices/istj/sample.wav"
+    "characterId": "char_enfp_001",
+    "name": "星野 みゆ",
+    "mbti": "ENFP",
+    "description": "明るく発想豊かな広報型秘書",
+    "tone": "親しみやすく弾む口調",
+    "voiceId": "voice_enfp_001",
+    "iconUrl": "/assets/characters/enfp/icon.png",
+    "standingImageUrl": "/assets/characters/enfp/standing.png",
+    "sampleVoiceUrl": "/assets/characters/enfp/sample.wav"
   },
   "error": null
 }
@@ -641,7 +641,7 @@ POST /api/v1/users/{userId}/chat/messages
 ```json
 {
   "message": "今日はちょっとゲームしすぎたかも",
-  "characterId": "char_istj_001",
+  "characterId": "char_enfp_001",
   "generateVoice": true
 }
 ```
@@ -676,7 +676,7 @@ POST /api/v1/users/{userId}/chat/messages
     "assistantMessage": {
       "chatLogId": "chat_002",
       "role": "assistant",
-      "characterId": "char_istj_001",
+      "characterId": "char_enfp_001",
       "message": "社長、正直に報告できたのは良いことです。ただ、明日は目標時間を意識して、先にタスクを片付けましょう。",
       "voiceUrl": "/api/v1/voice-files/voice_file_001",
       "createdAt": "2026-05-13T21:00:05+09:00"
@@ -706,7 +706,7 @@ GET /api/v1/users/{userId}/chat/messages
 
 ```txt
 date=2026-05-13
-characterId=char_istj_001
+characterId=char_enfp_001
 limit=50
 cursor=xxx
 ```
@@ -722,7 +722,7 @@ cursor=xxx
         "chatLogId": "chat_001",
         "role": "user",
         "message": "今日はちょっとゲームしすぎたかも",
-        "characterId": "char_istj_001",
+        "characterId": "char_enfp_001",
         "voiceUrl": null,
         "createdAt": "2026-05-13T21:00:00+09:00"
       },
@@ -730,7 +730,7 @@ cursor=xxx
         "chatLogId": "chat_002",
         "role": "assistant",
         "message": "社長、正直に報告できたのは良いことです。",
-        "characterId": "char_istj_001",
+        "characterId": "char_enfp_001",
         "voiceUrl": "/api/v1/voice-files/voice_file_001",
         "createdAt": "2026-05-13T21:00:05+09:00"
       }
@@ -757,7 +757,7 @@ POST /api/v1/users/{userId}/voices
 
 ```json
 {
-  "characterId": "char_istj_001",
+  "characterId": "char_enfp_001",
   "text": "社長、本日のタスク進捗を確認しましょう。"
 }
 ```
@@ -769,7 +769,7 @@ POST /api/v1/users/{userId}/voices
   "success": true,
   "data": {
     "voiceFileId": "voice_file_001",
-    "characterId": "char_istj_001",
+    "characterId": "char_enfp_001",
     "text": "社長、本日のタスク進捗を確認しましょう。",
     "voiceUrl": "/api/v1/voice-files/voice_file_001",
     "createdAt": "2026-05-13T12:00:00+09:00"
@@ -816,7 +816,7 @@ GET /api/v1/users/{userId}/chat-logs
 
 ```txt
 date=2026-05-13
-characterId=char_istj_001
+characterId=char_enfp_001
 ```
 
 ### Response
@@ -826,7 +826,7 @@ characterId=char_istj_001
   "success": true,
   "data": {
     "date": "2026-05-13",
-    "characterId": "char_istj_001",
+    "characterId": "char_enfp_001",
     "logs": [
       {
         "chatLogId": "chat_001",
@@ -868,8 +868,8 @@ GET /api/v1/users/{userId}/chat-logs/dates
       "messageCount": 24,
       "characters": [
         {
-          "characterId": "char_istj_001",
-          "name": "白石 澪"
+          "characterId": "char_enfp_001",
+          "name": "星野 みゆ"
         }
       ]
     }
@@ -896,12 +896,12 @@ GET /api/v1/setup/options
   "data": {
     "characters": [
       {
-        "characterId": "char_istj_001",
-        "name": "白石 澪",
-        "mbti": "ISTJ",
-        "description": "真面目で几帳面な管理型秘書",
-        "iconUrl": "/assets/characters/istj/icon.png",
-        "sampleVoiceUrl": "/assets/voices/istj/sample.wav"
+        "characterId": "char_enfp_001",
+        "name": "星野 みゆ",
+        "mbti": "ENFP",
+        "description": "明るく発想豊かな広報型秘書",
+        "iconUrl": "/assets/characters/enfp/icon.png",
+        "sampleVoiceUrl": "/assets/characters/enfp/sample.wav"
       }
     ],
     "defaultTargetEntertainmentMinutes": 120
@@ -921,7 +921,7 @@ GET /api/v1/setup/options
 ```json
 {
   "message": "今日はゲームしすぎた",
-  "characterId": "char_istj_001",
+  "characterId": "char_enfp_001",
   "generateVoice": true
 }
 ```
@@ -937,10 +937,10 @@ GET /api/v1/setup/options
     "presidentName": "社長"
   },
   "character": {
-    "name": "白石 澪",
-    "mbti": "ISTJ",
-    "description": "真面目で几帳面な管理型秘書",
-    "tone": "丁寧で落ち着いた口調"
+    "name": "星野 みゆ",
+    "mbti": "ENFP",
+    "description": "明るく発想豊かな広報型秘書",
+    "tone": "親しみやすく弾む口調"
   },
   "todayStats": {
     "completedTaskCount": 3,
@@ -1163,14 +1163,14 @@ systemPromptFragment
 
 ## 18.1 キャラクター画像・音声のURL変換ルール
 
-DBに保存されているパス（例: `characters/istj/icon.png`）は、APIレスポンス生成時に以下のプレフィックスを付与してURLに変換する。
+DBに保存されているパス（例: `characters/enfp/icon.png`）は、APIレスポンス生成時に以下のプレフィックスを付与してURLに変換する。
 
 - 画像: `/assets/{path}`
 - 音声: `/assets/{path}`
 
 変換例:
-`icon_path: "characters/istj/icon.png"`
-→ `iconUrl: "/assets/characters/istj/icon.png"`
+`icon_path: "characters/enfp/icon.png"`
+→ `iconUrl: "/assets/characters/enfp/icon.png"`
 
 ## 18.2 summaryText の生成方針
 

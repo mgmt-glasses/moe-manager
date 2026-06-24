@@ -186,7 +186,7 @@ curl -s "$URL/api/v1/characters"  # => キャラクター一覧（DB 疎通確�
 - ルートパス `/` はハンドラを定義していないため `404 page not found` を返しますが、これは正常です（障害ではありません）。動作確認は必ず `/api/v1/health` など API パスで行ってください。
 - 公開設定は `--allow-unauthenticated` のため、認証なしで誰でも到達できます（MVP 段階。認証は別途整備）。
 
-## フロントエンド（iOS アプリ）からの接続
+## フロントエンド（iOS アプリ）からの接続手順
 
 フロントエンドは iOS ネイティブアプリ（`moe-manger-frontend` の `MySecretary`）です。ブラウザを介さないため **CORS 設定は不要**です。
 
@@ -199,10 +199,29 @@ curl -s "$URL/api/v1/characters"  # => キャラクター一覧（DB 疎通確�
 
 デプロイした Cloud Run の API に接続するには、開発者設定で次のように設定します。
 
-1. モードを `mock` 以外（**`local`** または **`remote`** のどちらでも可）に変更する。
-2. baseURL を **`https://moe-manager-api-ydy2vlqfxa-uc.a.run.app/api/v1`** に設定する（末尾の `/api/v1` まで含める）。
+1. iOS アプリを起動する。
+2. 開発者設定（DeveloperSettings）画面を開く。
+3. 接続モードを `mock` 以外に変更する。画面上の表示では **ローカル** または **リモート** のどちらでも可。
+4. ベース URL に `https://moe-manager-api-ydy2vlqfxa-uc.a.run.app/api/v1` を設定する。末尾の `/api/v1` まで含める。
+5. アプリを終了し、再起動する。接続設定は起動時に読み込まれるため、変更は次回起動時に反映される。
 
-接続先は手順 2 の baseURL のみで決まります。アプリ側のコード変更は不要で、設定値の切り替えのみで完結します。
+接続先は手順 4 のベース URL のみで決まります。アプリ側のコード変更は不要で、設定値の切り替えのみで完結します。
+
+### フロントエンド接続前の疎通確認
+
+iOS アプリから接続する前に、Cloud Run API が公開 URL で応答していることを確認します。
+
+```bash
+curl -s https://moe-manager-api-ydy2vlqfxa-uc.a.run.app/api/v1/health
+curl -s https://moe-manager-api-ydy2vlqfxa-uc.a.run.app/api/v1/characters
+```
+
+期待結果:
+
+- `/api/v1/health` が `{"status":"ok"}` を返す。
+- `/api/v1/characters` が `success: true` とキャラクター一覧を返す。
+
+上記が成功していれば、Cloud Run の起動、Cloud SQL 接続、起動時マイグレーション、公開 API の基本疎通は成功しています。iOS アプリは同じ HTTPS URL に直接アクセスするため、追加の CORS 設定やプロキシ設定は不要です。
 
 ## 実行時環境変数
 

@@ -164,6 +164,9 @@ uv.lock
 *.out
 vendor/
 
+# Runtime output (locally generated voices, etc.)
+data/
+
 # Environment
 .env
 .env.local
@@ -182,3 +185,4 @@ docs/reviews/
 docs/test-reviews/
 docs/lessons-learned.md
 scripts/check-repo-readiness.sh
+development-guide.md

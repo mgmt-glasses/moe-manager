@@ -21,6 +21,8 @@ import (
 	charadapter "github.com/mgmt-glasses/moe-manager/internal/character/adapter"
 	"github.com/mgmt-glasses/moe-manager/internal/chat"
 	chatadapter "github.com/mgmt-glasses/moe-manager/internal/chat/adapter"
+	"github.com/mgmt-glasses/moe-manager/internal/screentime"
+	screentimeadapter "github.com/mgmt-glasses/moe-manager/internal/screentime/adapter"
 	"github.com/mgmt-glasses/moe-manager/internal/statistics"
 	statsadapter "github.com/mgmt-glasses/moe-manager/internal/statistics/adapter"
 	"github.com/mgmt-glasses/moe-manager/internal/task"
@@ -71,6 +73,23 @@ func main() {
 	taskRepo := taskadapter.NewPostgresTaskRepository(db)
 	taskSvc := task.NewService(taskRepo)
 	taskHandler := task.NewHandler(taskSvc)
+
+	screentimeRepo := screentimeadapter.NewPostgresScreenTimeRepository(db)
+	var screentimeAnalyzer screentime.ImageAnalyzer
+	geminiKey := os.Getenv("GEMINI_API_KEY")
+	if geminiKey != "" {
+		analyzer, err := screentimeadapter.NewGeminiImageAnalyzer(ctx, geminiKey)
+		if err != nil {
+			log.Printf("failed to init gemini analyzer, continuing without it: %v", err)
+		} else {
+			screentimeAnalyzer = analyzer
+			defer analyzer.Close()
+		}
+	} else {
+		log.Println("GEMINI_API_KEY is empty, image analysis feature will be disabled")
+	}
+	screentimeSvc := screentime.NewService(screentimeRepo, screentimeAnalyzer)
+	screentimeHandler := screentime.NewHandler(screentimeSvc)
 
 	vertexProject := os.Getenv("VERTEX_PROJECT")
 	if vertexProject == "" {
@@ -147,6 +166,11 @@ func main() {
 		r.Patch("/tasks/{taskId}/complete", taskHandler.Complete)
 		r.Patch("/tasks/{taskId}/reopen", taskHandler.Reopen)
 		r.Delete("/tasks/{taskId}", taskHandler.Delete)
+
+		r.Post("/screentime/{date}", screentimeHandler.Upsert)
+		r.Get("/screentime/{date}", screentimeHandler.Get)
+		r.Get("/screentime", screentimeHandler.List)
+		r.Post("/screentime/analyze", screentimeHandler.Analyze)
 
 		r.Post("/chat/messages", chatHandler.HandleSendMessage)
 		r.Post("/voices", voiceHandler.Generate)

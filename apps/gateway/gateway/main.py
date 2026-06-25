@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from moe_user.adapters.inbound.api.user_router import router as user_router
 from moe_character.adapters.inbound.api.character_router import router as character_router
 from moe_task.adapters.inbound.api.task_router import router as task_router
-from moe_screentime.adapters.inbound.api.screentime_router import router as screentime_router
 from moe_statistics.adapters.inbound.api.statistics_router import router as statistics_router
 
 # voice-library の chat/voice router はそのまま流用
@@ -15,7 +14,6 @@ app = FastAPI(title="Moe Manager API", version="0.1.0")
 app.include_router(user_router)
 app.include_router(character_router)
 app.include_router(task_router)
-app.include_router(screentime_router)
 app.include_router(statistics_router)
 app.include_router(chat_router)
 

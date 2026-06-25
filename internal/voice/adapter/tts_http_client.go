@@ -20,10 +20,16 @@ type TTSHTTPClient struct {
 	httpClient *http.Client
 }
 
-func NewTTSHTTPClient(baseURL string) *TTSHTTPClient {
+// NewTTSHTTPClient creates a client. timeout <= 0 falls back to defaultTTSTimeout.
+// Cloud Run の scale-to-zero では TTS のコールドスタート（GPU 割当 + モデルロード）に
+// 数十秒かかるため、呼び出し側で十分な timeout を渡せるようにする。
+func NewTTSHTTPClient(baseURL string, timeout time.Duration) *TTSHTTPClient {
+	if timeout <= 0 {
+		timeout = defaultTTSTimeout
+	}
 	return &TTSHTTPClient{
 		baseURL:    baseURL,
-		httpClient: &http.Client{Timeout: defaultTTSTimeout},
+		httpClient: &http.Client{Timeout: timeout},
 	}
 }
 

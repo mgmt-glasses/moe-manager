@@ -54,6 +54,6 @@ jobs:
             --allow-unauthenticated \
             --add-cloudsql-instances="${{ vars.CLOUD_SQL_INSTANCE }}" \
             --set-env-vars="VERTEX_PROJECT=${{ env.PROJECT_ID }},VERTEX_LOCATION=${{ vars.VERTEX_LOCATION }},VERTEX_MODEL=${{ vars.VERTEX_MODEL }}" \
-            --set-secrets="DATABASE_URL=DATABASE_URL:latest"
+            --set-secrets="DATABASE_URL=DATABASE_URL:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest"
             # TTS_SERVICE_URL は TTS サービスをデプロイした時点で追記する。
             # 未設定時は API 側で音声機能のみ縮退する（cmd/api/main.go のフォールバック）。

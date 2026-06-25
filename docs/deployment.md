@@ -63,6 +63,9 @@ gcloud sql users set-password postgres --instance=moe-manager-db \
 # DATABASE_URL（Cloud SQL の Unix socket 経由）
 # 形式: postgres://USER:PASS@/moe_manager?host=/cloudsql/PROJECT:REGION:INSTANCE&sslmode=disable
 echo -n "postgres://..." | gcloud secrets create DATABASE_URL --data-file=-
+
+# GEMINI_API_KEY（スクリーンタイム画像解析で使用。未設定時は画像解析のみ縮退）
+echo -n "AIza..." | gcloud secrets create GEMINI_API_KEY --data-file=-
 ```
 
 `TTS_SERVICE_URL` は TTS サービスをデプロイするまで作成しません。未設定時は API が `http://localhost:8001` にフォールバックし、音声機能のみ縮退します（`cmd/api/main.go`）。空文字の Secret はバージョンが作られず `:latest` 参照で起動に失敗するため、値が用意できるまで Secret 自体を作らず `deploy.yml` の `--set-secrets` からも外しておきます。
@@ -160,7 +163,7 @@ gcloud run deploy moe-manager-api \
   --allow-unauthenticated \
   --add-cloudsql-instances moe-manager:us-central1:moe-manager-db \
   --set-env-vars VERTEX_PROJECT=moe-manager,VERTEX_LOCATION=us-central1,VERTEX_MODEL=gemini-2.5-flash \
-  --set-secrets DATABASE_URL=DATABASE_URL:latest
+  --set-secrets DATABASE_URL=DATABASE_URL:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest
 ```
 
 初回は Artifact Registry の `cloud-run-source-deploy` リポジトリが自動作成されます。`TTS_SERVICE_URL` は未デプロイのため付けません（付けると空 Secret 参照で失敗します）。
@@ -230,6 +233,7 @@ Cloud Run 側で設定される環境変数です（`deploy.yml` 参照）。
 | 環境変数 | ソース | 説明 |
 |----------|--------|------|
 | `DATABASE_URL` | Secret Manager | Cloud SQL 接続文字列 |
+| `GEMINI_API_KEY` | Secret Manager | スクリーンタイム画像解析用の Gemini API キー（未設定時は画像解析のみ縮退） |
 | `TTS_SERVICE_URL` | Secret Manager | TTS サービスの URL（TTS デプロイ後に追加。未設定時は縮退） |
 | `VERTEX_PROJECT` | Variables | GCP プロジェクト ID |
 | `VERTEX_LOCATION` | Variables | Vertex AI のリージョン |

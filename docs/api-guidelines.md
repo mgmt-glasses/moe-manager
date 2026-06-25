@@ -80,7 +80,8 @@ MVP で扱う API ドメインは以下です。
 
 ## 優先実装順
 
-詳細なリクエスト/レスポンス例は `detail/api_design_mvp.md` を参照します。
+実装済み API の詳細なリクエスト/レスポンス例は `api-reference.md` を参照します。
+未実装 API の検討時は `detail/api_design_mvp.md` を参考にします。
 実装順は以下を基本とします。
 
 | 順序 | 対象 | API |
@@ -90,7 +91,7 @@ MVP で扱う API ドメインは以下です。
 | 3 | 娯楽時間 | `PUT /users/{userId}/entertainment-records/{date}`, `GET /users/{userId}/entertainment-records/{date}`, `GET /users/{userId}/entertainment-records` |
 | 4 | 統計 | `GET /users/{userId}/stats/today`, `GET /users/{userId}/stats/daily/{date}`, `GET /users/{userId}/stats/weekly` |
 | 5 | チャット | `POST /users/{userId}/chat/messages`, `GET /users/{userId}/chat/messages`, `GET /users/{userId}/chat-logs`, `GET /users/{userId}/chat-logs/dates` |
-| 6 | ボイス | `POST /users/{userId}/voices`, `GET /voice-files/{voiceFileId}` |
+| 6 | ボイス | `POST /users/{userId}/voices`, `GET /users/{userId}/voice-files/{voiceFileId}` |
 
 パスは Base URL `/api/v1` 配下として扱います。
 

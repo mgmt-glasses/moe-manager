@@ -22,7 +22,7 @@
 |------|-----|
 | ベース URL（ローカル） | `http://localhost:8081` |
 | Content-Type | `application/json`（音声取得エンドポイントを除く） |
-| 認証 | なし（MVP フェーズ） |
+| 認証 | なし（MVP/ローカル開発フェーズ。公開環境では Cloud Run IAM または API 認証で保護する） |
 
 ### ローカル起動手順
 
@@ -39,7 +39,7 @@ go run ./cmd/api
 
 ## 共通レスポンス形式
 
-すべての JSON エンドポイントは以下の形式を返します。
+ヘルスチェックを除く JSON エンドポイントは以下の形式を返します。
 
 ```json
 {
@@ -69,6 +69,7 @@ go run ./cmd/api
 | コード | HTTP ステータス | 説明 |
 |--------|----------------|------|
 | `INVALID_BODY` | 400 | リクエストボディのパース失敗 |
+| `INVALID_REQUEST` | 400 | リクエスト内容の解析失敗または必須データ不足 |
 | `VALIDATION_ERROR` | 400 | 必須フィールドの不足・形式不正 |
 | `INVALID_DATE` | 400 | 日付フォーマット不正（YYYY-MM-DD 形式が必要） |
 | `CHARACTER_NOT_FOUND` | 400 | 指定したキャラクターが存在しない |
@@ -76,6 +77,7 @@ go run ./cmd/api
 | `FORBIDDEN` | 403 | 操作権限なし |
 | `NO_CHARACTER_SELECTED` | 422 | キャラクターが未選択 |
 | `PERSONA_NOT_FOUND` | 422 | キャラクター設定が未登録 |
+| `SERVICE_UNAVAILABLE` | 503 | 外部サービスまたは一部機能が利用不可 |
 | `INTERNAL_ERROR` | 500 | サーバー内部エラー |
 
 ---

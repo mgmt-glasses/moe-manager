@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	appauth "github.com/mgmt-glasses/moe-manager/internal/auth"
 	"github.com/mgmt-glasses/moe-manager/internal/shared"
 )
 
@@ -59,7 +60,9 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authUser, _ := appauth.UserFromContext(r.Context())
 	u, err := h.svc.Create(r.Context(), CreateInput{
+		UserID:                     authUser.UID,
 		Name:                       body.Name,
 		PresidentName:              body.PresidentName,
 		TargetEntertainmentMinutes: body.TargetEntertainmentMinutes,

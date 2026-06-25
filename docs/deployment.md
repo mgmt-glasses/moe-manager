@@ -135,6 +135,7 @@ done
 | `GCP_PROJECT_ID` | `moe-manager` |
 | `GCP_REGION` | `us-central1` |
 | `CLOUD_SQL_INSTANCE` | `moe-manager:us-central1:moe-manager-db` |
+| `FIREBASE_PROJECT_ID` | `moe-manager` |
 | `VERTEX_LOCATION` | `us-central1` |
 | `VERTEX_MODEL` | `gemini-2.5-flash` |
 
@@ -162,7 +163,7 @@ gcloud run deploy moe-manager-api \
   --platform managed \
   --allow-unauthenticated \
   --add-cloudsql-instances moe-manager:us-central1:moe-manager-db \
-  --set-env-vars VERTEX_PROJECT=moe-manager,VERTEX_LOCATION=us-central1,VERTEX_MODEL=gemini-2.5-flash \
+  --set-env-vars FIREBASE_PROJECT_ID=moe-manager,VERTEX_PROJECT=moe-manager,VERTEX_LOCATION=us-central1,VERTEX_MODEL=gemini-2.5-flash \
   --set-secrets DATABASE_URL=DATABASE_URL:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest
 ```
 
@@ -235,6 +236,7 @@ Cloud Run 側で設定される環境変数です（`deploy.yml` 参照）。
 | `DATABASE_URL` | Secret Manager | Cloud SQL 接続文字列 |
 | `GEMINI_API_KEY` | Secret Manager | スクリーンタイム画像解析用の Gemini API キー（未設定時は画像解析のみ縮退） |
 | `TTS_SERVICE_URL` | Secret Manager | TTS サービスの URL（TTS デプロイ後に追加。未設定時は縮退） |
+| `FIREBASE_PROJECT_ID` | Variables | Firebase ID token の検証対象プロジェクト ID |
 | `VERTEX_PROJECT` | Variables | GCP プロジェクト ID |
 | `VERTEX_LOCATION` | Variables | Vertex AI のリージョン |
 | `VERTEX_MODEL` | Variables | 使用する Gemini モデル |

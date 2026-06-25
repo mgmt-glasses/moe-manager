@@ -22,13 +22,22 @@
 |------|-----|
 | ベース URL（ローカル） | `http://localhost:8081` |
 | Content-Type | `application/json`（音声取得エンドポイントを除く） |
-| 認証 | なし（MVP/ローカル開発フェーズ。公開環境では Cloud Run IAM または API 認証で保護する） |
+| 認証 | Firebase ID token（`GET /api/v1/health`, `GET /api/v1/characters`, `GET /api/v1/characters/{characterId}` を除く） |
+
+認証が必要な API は、Firebase Auth ログイン後に取得した ID token を送信します。
+
+```http
+Authorization: Bearer <Firebase ID token>
+```
+
+`/api/v1/users/{userId}` 配下では、ID token の `uid` とパスの `{userId}` が一致する必要があります。
 
 ### ローカル起動手順
 
 ```bash
 # 環境変数を設定（.env を参照）
 export DATABASE_URL=postgres://...
+export FIREBASE_PROJECT_ID=your-firebase-project
 export VERTEX_PROJECT=your-gcp-project
 export PORT=8081
 
@@ -68,6 +77,7 @@ go run ./cmd/api
 
 | コード | HTTP ステータス | 説明 |
 |--------|----------------|------|
+| `UNAUTHORIZED` | 401 | 認証トークンなし、または認証トークン不正 |
 | `INVALID_BODY` | 400 | リクエストボディのパース失敗 |
 | `INVALID_REQUEST` | 400 | リクエスト内容の解析失敗または必須データ不足 |
 | `VALIDATION_ERROR` | 400 | 必須フィールドの不足・形式不正 |

@@ -17,6 +17,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/lib/pq"
 
+	appauth "github.com/mgmt-glasses/moe-manager/internal/auth"
 	"github.com/mgmt-glasses/moe-manager/internal/character"
 	charadapter "github.com/mgmt-glasses/moe-manager/internal/character/adapter"
 	"github.com/mgmt-glasses/moe-manager/internal/chat"
@@ -138,6 +139,13 @@ func main() {
 	voiceSvc := voice.NewService(voiceSynthesizer, voiceStorage, voiceRepo, voiceUserChecker)
 	voiceHandler := voice.NewHandler(voiceSvc)
 
+	firebaseProjectID := os.Getenv("FIREBASE_PROJECT_ID")
+	authVerifier, err := appauth.NewFirebaseVerifier(firebaseProjectID)
+	if err != nil {
+		log.Fatalf("failed to init auth verifier: %v", err)
+	}
+	authMiddleware := appauth.NewMiddleware(authVerifier)
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -147,34 +155,40 @@ func main() {
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 
-	r.Post("/api/v1/users", userHandler.Create)
-
 	r.Get("/api/v1/characters", charHandler.List)
 	r.Get("/api/v1/characters/{characterId}", charHandler.GetByID)
 
-	r.Route("/api/v1/users/{userId}", func(r chi.Router) {
-		r.Get("/", userHandler.GetByID)
-		r.Patch("/", userHandler.Update)
-		r.Patch("/selected-character", userHandler.UpdateSelectedCharacter)
+	r.Group(func(r chi.Router) {
+		r.Use(authMiddleware.RequireAuth)
 
-		r.Get("/stats/today", statsHandler.GetToday)
-		r.Get("/stats/daily/{date}", statsHandler.GetDaily)
-		r.Get("/stats/weekly", statsHandler.GetWeekly)
+		r.Post("/api/v1/users", userHandler.Create)
 
-		r.Post("/tasks", taskHandler.Create)
-		r.Get("/tasks", taskHandler.List)
-		r.Patch("/tasks/{taskId}/complete", taskHandler.Complete)
-		r.Patch("/tasks/{taskId}/reopen", taskHandler.Reopen)
-		r.Delete("/tasks/{taskId}", taskHandler.Delete)
+		r.Route("/api/v1/users/{userId}", func(r chi.Router) {
+			r.Use(authMiddleware.RequirePathUser("userId"))
 
-		r.Post("/screentime/{date}", screentimeHandler.Upsert)
-		r.Get("/screentime/{date}", screentimeHandler.Get)
-		r.Get("/screentime", screentimeHandler.List)
-		r.Post("/screentime/analyze", screentimeHandler.Analyze)
+			r.Get("/", userHandler.GetByID)
+			r.Patch("/", userHandler.Update)
+			r.Patch("/selected-character", userHandler.UpdateSelectedCharacter)
 
-		r.Post("/chat/messages", chatHandler.HandleSendMessage)
-		r.Post("/voices", voiceHandler.Generate)
-		r.Get("/voice-files/{voiceFileId}", voiceHandler.GetAudio)
+			r.Get("/stats/today", statsHandler.GetToday)
+			r.Get("/stats/daily/{date}", statsHandler.GetDaily)
+			r.Get("/stats/weekly", statsHandler.GetWeekly)
+
+			r.Post("/tasks", taskHandler.Create)
+			r.Get("/tasks", taskHandler.List)
+			r.Patch("/tasks/{taskId}/complete", taskHandler.Complete)
+			r.Patch("/tasks/{taskId}/reopen", taskHandler.Reopen)
+			r.Delete("/tasks/{taskId}", taskHandler.Delete)
+
+			r.Post("/screentime/{date}", screentimeHandler.Upsert)
+			r.Get("/screentime/{date}", screentimeHandler.Get)
+			r.Get("/screentime", screentimeHandler.List)
+			r.Post("/screentime/analyze", screentimeHandler.Analyze)
+
+			r.Post("/chat/messages", chatHandler.HandleSendMessage)
+			r.Post("/voices", voiceHandler.Generate)
+			r.Get("/voice-files/{voiceFileId}", voiceHandler.GetAudio)
+		})
 	})
 
 	port := os.Getenv("PORT")

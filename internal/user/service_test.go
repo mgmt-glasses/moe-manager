@@ -38,6 +38,26 @@ func TestService_Create_OK(t *testing.T) {
 	}
 }
 
+func TestService_Create_UsesProvidedUserID(t *testing.T) {
+	repo := testutil.NewFakeRepository()
+	svc := user.NewService(repo, testutil.NewFakeCharacterValidator())
+
+	got, err := svc.Create(context.Background(), user.CreateInput{
+		UserID:        "firebase_uid_001",
+		Name:          "山田太郎",
+		PresidentName: "山田社長",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.ID != "firebase_uid_001" {
+		t.Errorf("id: got %q, want firebase_uid_001", got.ID)
+	}
+	if _, err := repo.FindByID(context.Background(), "firebase_uid_001"); err != nil {
+		t.Errorf("expected user to be persisted by provided id: %v", err)
+	}
+}
+
 func TestService_Create_DefaultsTargetEntertainmentMinutes(t *testing.T) {
 	svc := user.NewService(testutil.NewFakeRepository(), testutil.NewFakeCharacterValidator())
 

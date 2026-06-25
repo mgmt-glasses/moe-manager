@@ -88,11 +88,19 @@ func (v *FirebaseVerifier) VerifyIDToken(ctx context.Context, rawToken string) (
 func (v *FirebaseVerifier) publicKey(ctx context.Context, kid string) (*rsa.PublicKey, error) {
 	v.mu.Lock()
 	key, ok := v.certs[kid]
-	if ok && v.now().Before(v.expires) {
-		v.mu.Unlock()
+	fresh := v.now().Before(v.expires)
+	v.mu.Unlock()
+
+	if ok && fresh {
 		return key, nil
 	}
-	v.mu.Unlock()
+	// キャッシュがまだ有効な間は、未知の kid を refresh せず即弾く。
+	// 認証前の公開エンドポイントなので、攻撃者がランダムな kid を投げて
+	// Google 証明書エンドポイントへの外部 HTTP を毎回誘発できないようにする。
+	// Firebase の証明書は Cache-Control の max-age 内ではローテーションされない。
+	if fresh {
+		return nil, fmt.Errorf("%w: unknown kid", ErrInvalidToken)
+	}
 
 	if err := v.refreshCerts(ctx); err != nil {
 		return nil, err

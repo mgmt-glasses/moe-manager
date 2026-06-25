@@ -188,7 +188,7 @@ curl -s "$URL/api/v1/characters"  # => キャラクター一覧（DB 疎通確�
 - この URL は Cloud Run がプロジェクト・サービス単位で割り当てる固定値で、再デプロイ（リビジョン更新）しても変わりません。
 - API は全て `/api/v1/` 配下にあります。例: `GET /api/v1/health`、`GET /api/v1/characters`。
 - ルートパス `/` はハンドラを定義していないため `404 page not found` を返しますが、これは正常です（障害ではありません）。動作確認は必ず `/api/v1/health` など API パスで行ってください。
-- 公開設定は `--allow-unauthenticated` のため、認証なしで誰でも到達できます（MVP 段階。認証は別途整備）。
+- 公開設定は `--allow-unauthenticated` のため、Cloud Run の IAM 認証は無効で URL には誰でも到達できます。代わりにユーザー別 API はアプリ層の Firebase ID token 認証で保護します（[ADR-0010](adr/0010-firebase-auth-boundary.md)）。`GET /api/v1/health` と `GET /api/v1/characters` のみ認証不要です。
 
 ## フロントエンド（iOS アプリ）からの接続手順
 

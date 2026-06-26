@@ -20,6 +20,7 @@ moe-manager/
 ├── cmd/
 │   └── api/              # HTTP サーバー起動、ルーティング、依存性注入
 ├── internal/
+│   ├── auth/             # Firebase ID token 検証、認証ミドルウェア（横断的関心事）
 │   ├── user/             # ユーザ管理
 │   ├── character/        # キャラ管理
 │   ├── task/             # タスク管理
@@ -96,6 +97,7 @@ type StatisticsQuery interface {
 - ビジネスロジックを持たない。
 - 複数モジュールをまたぐ処理に必要な interface と adapter を組み合わせる。
 - モジュール内の repository 実装詳細を他モジュールへ漏らさない。
+- 認証は `internal/auth` のミドルウェアをルートに適用して行う。`internal/auth` はドメインに依存しない横断的関心事として扱い、検証済みユーザーを context 経由で各 handler へ渡す。
 
 ## チャット・TTS との関係
 

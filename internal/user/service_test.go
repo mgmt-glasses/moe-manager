@@ -16,6 +16,7 @@ func TestService_Create_OK(t *testing.T) {
 	svc := user.NewService(repo, charValid)
 	charID := "char_001"
 	got, err := svc.Create(context.Background(), user.CreateInput{
+		UserID:                     "firebase_uid_ok",
 		Name:                       "山田太郎",
 		PresidentName:              "山田社長",
 		TargetEntertainmentMinutes: 90,
@@ -38,10 +39,30 @@ func TestService_Create_OK(t *testing.T) {
 	}
 }
 
+func TestService_Create_UsesProvidedUserID(t *testing.T) {
+	repo := testutil.NewFakeRepository()
+	svc := user.NewService(repo, testutil.NewFakeCharacterValidator())
+
+	got, err := svc.Create(context.Background(), user.CreateInput{
+		UserID:        "firebase_uid_001",
+		Name:          "山田太郎",
+		PresidentName: "山田社長",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.ID != "firebase_uid_001" {
+		t.Errorf("id: got %q, want firebase_uid_001", got.ID)
+	}
+	if _, err := repo.FindByID(context.Background(), "firebase_uid_001"); err != nil {
+		t.Errorf("expected user to be persisted by provided id: %v", err)
+	}
+}
+
 func TestService_Create_DefaultsTargetEntertainmentMinutes(t *testing.T) {
 	svc := user.NewService(testutil.NewFakeRepository(), testutil.NewFakeCharacterValidator())
 
-	got, err := svc.Create(context.Background(), user.CreateInput{Name: "山田太郎", PresidentName: "山田社長"})
+	got, err := svc.Create(context.Background(), user.CreateInput{UserID: "firebase_uid_def", Name: "山田太郎", PresidentName: "山田社長"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -91,6 +112,27 @@ func TestService_Create_CharacterValidatorError(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestService_Create_MissingUserID(t *testing.T) {
+	svc := user.NewService(testutil.NewFakeRepository(), testutil.NewFakeCharacterValidator())
+
+	_, err := svc.Create(context.Background(), user.CreateInput{Name: "山田太郎", PresidentName: "山田社長"})
+	if !errors.Is(err, user.ErrBadInput) {
+		t.Errorf("expected ErrBadInput for missing userID, got %v", err)
+	}
+}
+
+func TestService_Create_AlreadyExists(t *testing.T) {
+	repo := &testutil.FakeRepository{Users: map[string]user.User{}, CreateErr: user.ErrAlreadyExists}
+	svc := user.NewService(repo, testutil.NewFakeCharacterValidator())
+
+	_, err := svc.Create(context.Background(), user.CreateInput{
+		UserID: "firebase_uid_dup", Name: "山田太郎", PresidentName: "山田社長",
+	})
+	if !errors.Is(err, user.ErrAlreadyExists) {
+		t.Errorf("expected ErrAlreadyExists to propagate, got %v", err)
 	}
 }
 

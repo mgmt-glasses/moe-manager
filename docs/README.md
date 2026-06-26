@@ -51,7 +51,7 @@
 ## 情報の優先順位
 
 1. 開発運用、依存方向、実装言語、配置場所はこのフォルダの方針ファイルを優先する。
-2. API の詳細なリクエスト/レスポンス例は `detail/api_design_mvp.md` を参照する。
+2. 実装済み API の詳細なリクエスト/レスポンス例は `api-reference.md` を参照する。未実装 API の検討時のみ `detail/api_design_mvp.md` を参考にする。
 3. DB の詳細なカラム定義は `detail/db-design.md` を参照する。ただし、テーブル名が矛盾する場合は `database-guidelines.md` の命名整理を優先する。
 4. MVP の体験・画面仕様の詳細は `detail/仕様書.md` を参照する。
 

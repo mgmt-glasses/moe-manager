@@ -22,13 +22,22 @@
 |------|-----|
 | ベース URL（ローカル） | `http://localhost:8081` |
 | Content-Type | `application/json`（音声取得エンドポイントを除く） |
-| 認証 | なし（MVP フェーズ） |
+| 認証 | Firebase ID token（`GET /api/v1/health`, `GET /api/v1/characters`, `GET /api/v1/characters/{characterId}` を除く） |
+
+認証が必要な API は、Firebase Auth ログイン後に取得した ID token を送信します。
+
+```http
+Authorization: Bearer <Firebase ID token>
+```
+
+`/api/v1/users/{userId}` 配下では、ID token の `uid` とパスの `{userId}` が一致する必要があります。
 
 ### ローカル起動手順
 
 ```bash
 # 環境変数を設定（.env を参照）
 export DATABASE_URL=postgres://...
+export FIREBASE_PROJECT_ID=your-firebase-project
 export VERTEX_PROJECT=your-gcp-project
 export PORT=8081
 
@@ -39,7 +48,7 @@ go run ./cmd/api
 
 ## 共通レスポンス形式
 
-すべての JSON エンドポイントは以下の形式を返します。
+ヘルスチェックを除く JSON エンドポイントは以下の形式を返します。
 
 ```json
 {
@@ -68,14 +77,18 @@ go run ./cmd/api
 
 | コード | HTTP ステータス | 説明 |
 |--------|----------------|------|
+| `UNAUTHORIZED` | 401 | 認証トークンなし、または認証トークン不正 |
 | `INVALID_BODY` | 400 | リクエストボディのパース失敗 |
+| `INVALID_REQUEST` | 400 | リクエスト内容の解析失敗または必須データ不足 |
 | `VALIDATION_ERROR` | 400 | 必須フィールドの不足・形式不正 |
 | `INVALID_DATE` | 400 | 日付フォーマット不正（YYYY-MM-DD 形式が必要） |
 | `CHARACTER_NOT_FOUND` | 400 | 指定したキャラクターが存在しない |
 | `NOT_FOUND` | 404 | リソースが見つからない |
 | `FORBIDDEN` | 403 | 操作権限なし |
+| `ALREADY_EXISTS` | 409 | リソースが既に存在する（例: 同一ユーザーの重複作成） |
 | `NO_CHARACTER_SELECTED` | 422 | キャラクターが未選択 |
 | `PERSONA_NOT_FOUND` | 422 | キャラクター設定が未登録 |
+| `SERVICE_UNAVAILABLE` | 503 | 外部サービスまたは一部機能が利用不可 |
 | `INTERNAL_ERROR` | 500 | サーバー内部エラー |
 
 ---

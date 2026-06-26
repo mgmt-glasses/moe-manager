@@ -8,9 +8,14 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	appauth "github.com/mgmt-glasses/moe-manager/internal/auth"
 	"github.com/mgmt-glasses/moe-manager/internal/user"
 	"github.com/mgmt-glasses/moe-manager/internal/user/testutil"
 )
+
+// testAuthUID は doRequest が注入する認証済みユーザーの uid。
+// 実運用では RequireAuth ミドルウェアが context に載せる値に相当する。
+const testAuthUID = "test_uid_001"
 
 type envelope struct {
 	Success bool            `json:"success"`
@@ -45,6 +50,8 @@ func doRequest(t *testing.T, h http.Handler, method, path, body string) (*httpte
 	t.Helper()
 	req := httptest.NewRequest(method, path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	// RequireAuth ミドルウェア通過後を模して、検証済みユーザーを context に載せる。
+	req = req.WithContext(appauth.WithUser(req.Context(), appauth.User{UID: testAuthUID}))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	return rec, decodeEnvelope(t, rec.Body.Bytes())
@@ -76,6 +83,41 @@ func TestHandler_Create_OK(t *testing.T) {
 	}
 	if data["createdAt"] == "" || data["updatedAt"] == "" {
 		t.Error("expected createdAt/updatedAt to be set")
+	}
+	if data["userId"] != testAuthUID {
+		t.Errorf("userId: got %v, want %q (token uid)", data["userId"], testAuthUID)
+	}
+}
+
+func TestHandler_Create_Conflict(t *testing.T) {
+	repo := &testutil.FakeRepository{Users: map[string]user.User{}, CreateErr: user.ErrAlreadyExists}
+	router := newTestRouter(user.NewHandler(user.NewService(repo, testutil.NewFakeCharacterValidator())))
+
+	rec, env := doRequest(t, router, http.MethodPost, "/api/v1/users", `{"name":"山田太郎","presidentName":"山田社長"}`)
+
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("status: got %d, want %d", rec.Code, http.StatusConflict)
+	}
+	if env.Error == nil || env.Error.Code != "ALREADY_EXISTS" {
+		t.Errorf("expected ALREADY_EXISTS code, got %+v", env.Error)
+	}
+}
+
+// 認証情報が context に無い場合は匿名作成せず 500 で弾く（fail-closed）。
+func TestHandler_Create_Unauthenticated(t *testing.T) {
+	router := newTestRouter(user.NewHandler(user.NewService(testutil.NewFakeRepository(), testutil.NewFakeCharacterValidator())))
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/users", strings.NewReader(`{"name":"山田太郎","presidentName":"山田社長"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("status: got %d, want %d", rec.Code, http.StatusInternalServerError)
+	}
+	env := decodeEnvelope(t, rec.Body.Bytes())
+	if env.Error == nil || env.Error.Code != "INTERNAL_ERROR" {
+		t.Errorf("expected INTERNAL_ERROR code, got %+v", env.Error)
 	}
 }
 

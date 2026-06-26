@@ -49,7 +49,7 @@ API の優先実装順は [API 方針](api-guidelines.md) を参照します。
 - Base URL は `/api/v1` を前提にする。
 - 画面単位ではなく、ドメイン単位で API を分ける。
 - フロントエンドに AI 生成やボイス生成の詳細を漏らさない。
-- MVP では認証は簡易実装でもよいが、API 上は `userId` を前提にする。
+- ユーザー別 API は Firebase ID token 認証を必須とし、token の `uid` とパス上の `userId` を照合する（実装は `internal/auth`）。
 - 日付は `YYYY-MM-DD`、日時は ISO 8601 を使う。
 - HTTP router は Go 標準ライブラリ互換の interface を持つものを使い、handler にビジネスロジックを置かない。
 

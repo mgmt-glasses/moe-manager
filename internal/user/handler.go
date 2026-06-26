@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	appauth "github.com/mgmt-glasses/moe-manager/internal/auth"
 	"github.com/mgmt-glasses/moe-manager/internal/shared"
 )
 
@@ -59,7 +60,16 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authUser, ok := appauth.UserFromContext(r.Context())
+	if !ok || authUser.UID == "" {
+		// RequireAuth 配下のため通常は到達しない。万一認証情報が無ければ
+		// 匿名作成を許さず弾く（fail-closed）。
+		shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "認証情報を取得できませんでした")
+		return
+	}
+
 	u, err := h.svc.Create(r.Context(), CreateInput{
+		UserID:                     authUser.UID,
 		Name:                       body.Name,
 		PresidentName:              body.PresidentName,
 		TargetEntertainmentMinutes: body.TargetEntertainmentMinutes,
@@ -71,6 +81,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			shared.WriteError(w, http.StatusBadRequest, "VALIDATION_ERROR", "入力内容が正しくありません")
 		case errors.Is(err, ErrCharacterNotFound):
 			shared.WriteError(w, http.StatusBadRequest, "CHARACTER_NOT_FOUND", "指定したキャラクターが存在しません")
+		case errors.Is(err, ErrAlreadyExists):
+			shared.WriteError(w, http.StatusConflict, "ALREADY_EXISTS", "ユーザは既に登録されています")
 		default:
 			shared.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "ユーザの作成に失敗しました")
 		}

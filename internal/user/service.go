@@ -5,14 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 var (
-	ErrNotFound        = errors.New("user not found")
-	ErrBadInput        = errors.New("invalid input")
+	ErrNotFound          = errors.New("user not found")
+	ErrBadInput          = errors.New("invalid input")
 	ErrCharacterNotFound = errors.New("character not found")
+	ErrAlreadyExists     = errors.New("user already exists")
 )
 
 type Service struct {
@@ -25,6 +24,7 @@ func NewService(repo Repository, charValid CharacterValidator) *Service {
 }
 
 type CreateInput struct {
+	UserID                     string
 	Name                       string
 	PresidentName              string
 	TargetEntertainmentMinutes int
@@ -54,9 +54,15 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (User, error) {
 		target = 120
 	}
 
+	// UserID は認証済みトークンの uid を必須とする。空の場合は認証境界の
+	// バックストップが機能していないため、ユーザーを勝手に生成せず弾く（fail-closed）。
+	if in.UserID == "" {
+		return User{}, fmt.Errorf("%w: userID is required", ErrBadInput)
+	}
+
 	now := time.Now()
 	u := User{
-		ID:                         uuid.NewString(),
+		ID:                         in.UserID,
 		Name:                       in.Name,
 		PresidentName:              in.PresidentName,
 		SelectedCharacterID:        in.SelectedCharacterID,

@@ -35,3 +35,4 @@ Accepted / Deprecated / Superseded by ADR-XXXX
 | No. | タイトル | ステータス |
 |-----|---------|----------|
 | [0009](0009-deployment-cloud-run-cloud-sql.md) | デプロイ構成 Cloud Run + Cloud SQL | Accepted |
+| [0010](0010-firebase-auth-boundary.md) | ユーザー別 API の Firebase ID token 認証 | Accepted |

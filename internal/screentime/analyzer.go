@@ -11,7 +11,7 @@ type CategoryUsage struct {
 
 type AnalysisResult struct {
 	Items        []CategoryUsage `json:"items"`
-	TotalMinutes int             `json:"total_minutes"`
+	TotalMinutes int             `json:"totalMinutes"`
 }
 
 type ImageAnalyzer interface {

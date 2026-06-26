@@ -631,7 +631,7 @@ POST /api/v1/users/{userId}/screentime/analyze
 ```json
 {
   "image": "<Base64エンコードされた画像データ>",
-  "mime_type": "image/jpeg"
+  "mimeType": "image/jpeg"
 }
 ```
 
@@ -647,7 +647,7 @@ POST /api/v1/users/{userId}/screentime/analyze
         "minutes": 120
       }
     ],
-    "total_minutes": 120
+    "totalMinutes": 120
   },
   "error": null
 }
@@ -668,7 +668,7 @@ POST /api/v1/users/{userId}/screentime/{date}
 ```json
 {
   "minutes": 120,
-  "target_minutes": 60
+  "targetMinutes": 60
 }
 ```
 
@@ -678,12 +678,12 @@ POST /api/v1/users/{userId}/screentime/{date}
 {
   "success": true,
   "data": {
-    "record_id": "abc123-...",
-    "user_id": "7c1e710b-...",
+    "recordId": "abc123-...",
+    "userId": "7c1e710b-...",
     "date": "2026-06-20",
     "minutes": 120,
-    "target_minutes": 60,
-    "diff_minutes": 60
+    "targetMinutes": 60,
+    "diffMinutes": 60
   },
   "error": null
 }

@@ -139,22 +139,23 @@ func main() {
 	voiceSvc := voice.NewService(voiceSynthesizer, voiceStorage, voiceRepo, voiceUserChecker)
 	voiceHandler := voice.NewHandler(voiceSvc)
 
+	// 認証バイパス（ローカル開発・デモ/検証用）の可否を判定する。
+	// 本番への誤混入を防ぐ多層防御は authBypassDecision に集約している。
 	var authVerifier appauth.TokenVerifier
-	if os.Getenv("AUTH_BYPASS") == "true" {
-		// ローカル開発・テスト専用。Firebase ログイン未実装のフロントから
-		// Authorization: Bearer <userId> だけで認証必須 API を叩けるようにする。
-		// 本番では AUTH_BYPASS を設定しないこと（フェイルクローズ）。
-		//
-		// 多層防御: Cloud Run は予約環境変数 K_SERVICE を必ず設定する。
-		// 本番（Cloud Run）に AUTH_BYPASS が誤混入しても、ここで起動を止める。
-		// 経路自体をリリースバイナリから除外する build タグ分離（案A）は
-		// 将来対応とする（ADR-0010 参照）。
+	bypass, fatalReason := authBypassDecision(os.Getenv)
+	switch {
+	case fatalReason != "":
+		log.Fatalf("%s", fatalReason)
+	case bypass:
+		// バイパスは署名検証を行わず Bearer 文字列をそのまま uid 扱いする。
+		// Firebase ログイン未実装のフロントから認証必須 API を叩けるようにする。
 		if os.Getenv("K_SERVICE") != "" {
-			log.Fatalf("AUTH_BYPASS=true は Cloud Run 環境（K_SERVICE=%q）では使用できません。本番では認証バイパスを無効にしてください。", os.Getenv("K_SERVICE"))
+			log.Printf("WARNING: AUTH_BYPASS=true on Cloud Run（K_SERVICE=%q）— デモ・検証用に認証バイパス有効。本番では絶対に使わないこと。", os.Getenv("K_SERVICE"))
+		} else {
+			log.Print("WARNING: AUTH_BYPASS=true — 認証バイパス有効。トークン署名を検証しません。ローカル開発用です。")
 		}
-		log.Print("WARNING: AUTH_BYPASS=true — 認証バイパス有効。トークン署名を検証しません。ローカル開発専用です。")
 		authVerifier = appauth.BypassVerifier{}
-	} else {
+	default:
 		firebaseProjectID := os.Getenv("FIREBASE_PROJECT_ID")
 		verifier, err := appauth.NewFirebaseVerifier(firebaseProjectID)
 		if err != nil {

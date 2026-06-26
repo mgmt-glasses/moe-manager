@@ -40,7 +40,8 @@ Cloud Run への公開（[ADR-0009](0009-deployment-cloud-run-cloud-sql.md)）�
 - すべてのユーザー別 API 呼び出しに有効な Firebase ID token が必要になる。クライアントはログイン後に token を付与する。
 - `FIREBASE_PROJECT_ID` が未設定だとサーバー起動に失敗する（フェイルクローズ）。ローカル・Cloud Run 双方で設定が必須。
 - ローカル開発・テスト用の例外として、`AUTH_BYPASS=true` を設定した場合に限り、署名検証を行わず Bearer トークン文字列をそのまま `uid` として扱う `BypassVerifier` を `FirebaseVerifier` の代わりに注入する。`RequireAuth` / `RequirePathUser` のロジックは変更せず、`TokenVerifier` の差し替えだけで実現する。フロントの Firebase ログインが未実装の間も認証必須 API を試せるようにするための措置であり、本番では `AUTH_BYPASS` を設定しない（設定すると任意の `uid` でのなりすましを許す）。
-  - **多層防御（実装済み）**: 運用上の「設定しない」だけに依存しないよう、Cloud Run の予約環境変数 `K_SERVICE` が設定された状態で `AUTH_BYPASS=true` を検出した場合は起動時に `log.Fatalf` で fail-fast する。本番（Cloud Run）への誤混入を構造的に止める。
+  - **多層防御（実装済み）**: 運用上の「設定しない」だけに依存しないよう、Cloud Run の予約環境変数 `K_SERVICE` が設定された状態で `AUTH_BYPASS=true` を検出した場合は既定で起動時に `log.Fatalf` で fail-fast する。本番（Cloud Run）への誤混入を構造的に止める。
+  - **デモ・検証環境でのオプトイン**: デモや検証は本番とは別の Cloud Run サービスで行うことがある。その環境でだけバイパスを使えるよう、`AUTH_BYPASS_ALLOW_CLOUD_RUN=true` を明示した場合に限り Cloud Run 上でもバイパスを許可する。本番サービスは `AUTH_BYPASS` / `AUTH_BYPASS_ALLOW_CLOUD_RUN` のいずれも設定しないため自動的に拒否される（fail-safe）。Cloud Run でバイパスを有効化するには2つの環境変数を同時に明示する必要があり、単一の設定ミスでは開かない。判定は `cmd/api/authBypassDecision` に集約し、ユニットテストで本番拒否／デモ許可の双方を検証する。デモ環境であってもバイパスは署名検証を行わず任意 `uid` のなりすましを許すため、一般公開しない閉じた環境に限定する。
   - **将来対応（案A への移行）**: より堅牢には、`bypass.go` を `//go:build dev` で分離し、本番ビルドに `BypassVerifier` 経路自体を含めない。Cloud Run 以外の実行環境でも安全になるが、`go run` / `go test` / Dockerfile に `-tags dev` の導入が必要で build・deploy 手順全体に波及するため、本 ADR の時点では `K_SERVICE` 検知（案B）に留め、build フレーバー整備のタイミングで案A へ移行する。
 - 認証仕様の正は `internal/auth` の実装と [api-reference](../api-reference.md) / [api-guidelines](../api-guidelines.md) とする。
 - トークン失効（revoke）の即時反映やカスタムクレームによるロール認可は本 ADR の範囲外とし、必要になった時点で別途検討する。

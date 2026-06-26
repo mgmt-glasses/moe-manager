@@ -81,6 +81,11 @@ func (v *FirebaseVerifier) VerifyIDToken(ctx context.Context, rawToken string) (
 	if claims.Subject == "" || len(claims.Subject) > 128 {
 		return User{}, fmt.Errorf("%w: subject", ErrInvalidClaims)
 	}
+	// jwt/v4 の Valid() は exp 不在を許容する（VerifyExpiresAt の required=false）。
+	// ID トークン検証の標準要件として、exp を持たないトークンは明示的に弾く。
+	if claims.ExpiresAt == nil {
+		return User{}, fmt.Errorf("%w: missing exp", ErrInvalidClaims)
+	}
 
 	return User{UID: claims.Subject, Email: claims.Email}, nil
 }

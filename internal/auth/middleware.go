@@ -72,8 +72,9 @@ func bearerToken(header string) (string, error) {
 		return "", ErrMissingToken
 	}
 	typ, token, ok := strings.Cut(header, " ")
-	if !ok || !strings.EqualFold(typ, "Bearer") || strings.TrimSpace(token) == "" {
+	token = strings.TrimSpace(token)
+	if !ok || !strings.EqualFold(typ, "Bearer") || token == "" {
 		return "", ErrInvalidToken
 	}
-	return strings.TrimSpace(token), nil
+	return token, nil
 }

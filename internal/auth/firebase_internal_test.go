@@ -15,7 +15,75 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/golang-jwt/jwt/v4"
 )
+
+func signTestToken(t *testing.T, key *rsa.PrivateKey, kid string, claims jwt.MapClaims) string {
+	t.Helper()
+	tok := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	tok.Header["kid"] = kid
+	signed, err := tok.SignedString(key)
+	if err != nil {
+		t.Fatalf("sign token: %v", err)
+	}
+	return signed
+}
+
+// verifierWithKey は cert を取得済みとみなして指定鍵を直接キャッシュに載せた verifier を返す。
+func verifierWithKey(key *rsa.PrivateKey, kid string, now time.Time) *FirebaseVerifier {
+	return &FirebaseVerifier{
+		projectID: "test-project",
+		client:    http.DefaultClient,
+		now:       func() time.Time { return now },
+		certs:     map[string]*rsa.PublicKey{kid: &key.PublicKey},
+		expires:   now.Add(time.Hour),
+	}
+}
+
+// exp を持たないトークンは、署名や issuer/aud/sub が正しくても弾く（ID トークン検証の標準要件）。
+func TestVerifyIDTokenRejectsMissingExp(t *testing.T) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+	v := verifierWithKey(key, "kid1", time.Unix(1000, 0))
+	token := signTestToken(t, key, "kid1", jwt.MapClaims{
+		"iss": "https://securetoken.google.com/test-project",
+		"aud": "test-project",
+		"sub": "uid_123",
+		// exp を意図的に省く
+	})
+
+	if _, err := v.VerifyIDToken(context.Background(), token); !errors.Is(err, ErrInvalidClaims) {
+		t.Fatalf("expected ErrInvalidClaims for missing exp, got %v", err)
+	}
+}
+
+// 署名・issuer・aud・sub・exp が揃った正規トークンは uid を返す。
+func TestVerifyIDTokenAcceptsValidToken(t *testing.T) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+	v := verifierWithKey(key, "kid1", time.Unix(1000, 0))
+	// jwt ライブラリの exp 検証は実時刻基準のため、十分未来を指定する。
+	token := signTestToken(t, key, "kid1", jwt.MapClaims{
+		"iss":   "https://securetoken.google.com/test-project",
+		"aud":   "test-project",
+		"sub":   "uid_123",
+		"email": "u@example.com",
+		"exp":   int64(1 << 33),
+	})
+
+	got, err := v.VerifyIDToken(context.Background(), token)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.UID != "uid_123" {
+		t.Errorf("uid: got %q, want uid_123", got.UID)
+	}
+}
 
 // newTestCertServer は kid -> PEM 証明書を返す httptest サーバーを立て、
 // 受け取った GET リクエスト数を atomic カウンタで記録する。

@@ -142,15 +142,15 @@ func main() {
 	// 認証バイパス（ローカル開発・デモ/検証用）の可否を判定する。
 	// 本番への誤混入を防ぐ多層防御は authBypassDecision に集約している。
 	var authVerifier appauth.TokenVerifier
-	bypass, fatalReason := authBypassDecision(os.Getenv)
+	bypass, onCloudRun, fatalReason := authBypassDecision(os.Getenv)
 	switch {
 	case fatalReason != "":
 		log.Fatalf("%s", fatalReason)
 	case bypass:
 		// バイパスは署名検証を行わず Bearer 文字列をそのまま uid 扱いする。
 		// Firebase ログイン未実装のフロントから認証必須 API を叩けるようにする。
-		if os.Getenv("K_SERVICE") != "" {
-			log.Printf("WARNING: AUTH_BYPASS=true on Cloud Run（K_SERVICE=%q）— デモ・検証用に認証バイパス有効。本番では絶対に使わないこと。", os.Getenv("K_SERVICE"))
+		if onCloudRun {
+			log.Print("WARNING: AUTH_BYPASS=true on Cloud Run — デモ・検証用に認証バイパス有効。本番では絶対に使わないこと。")
 		} else {
 			log.Print("WARNING: AUTH_BYPASS=true — 認証バイパス有効。トークン署名を検証しません。ローカル開発用です。")
 		}

@@ -175,17 +175,24 @@ gcloud run deploy moe-manager-api \
 
 本番用の `deploy` とはサービス名を分け、`--set-env-vars` に `AUTH_BYPASS=true,AUTH_BYPASS_ALLOW_CLOUD_RUN=true` を加えます（2変数の同時指定が必須。本番サービスには付けないこと）。`FIREBASE_PROJECT_ID` は不要です。
 
+> **重要（本番データを絶対に晒さない）:** 認証バイパス有効なサービスに本番 DB を繋ぐと、`Authorization: Bearer <任意の userId>` で本番ユーザーデータを誰でも読み書き・なりすましできてしまいます。次の2点を必ず守ってください。
+>
+> - **デモ専用 DB を使う** — 本番の Cloud SQL インスタンス（`moe-manager-db`）と本番 `DATABASE_URL` Secret を共有しない。別インスタンス（例 `moe-manager-db-demo`）・別 Secret（例 `DATABASE_URL_DEMO`）を使い、本番データに触れない構成にする。
+> - **アクセスを閉じる** — 可能な限り `--no-allow-unauthenticated`（Cloud Run IAM 認証）にし、招待した検証者だけが到達できるようにする。IAP / VPC 内限定でも可。`--allow-unauthenticated`（URL を知れば誰でも到達）は避ける。
+
 ```bash
 gcloud run deploy moe-manager-api-demo \
   --source . \
   --region us-central1 \
   --project moe-manager \
   --platform managed \
-  --allow-unauthenticated \
-  --add-cloudsql-instances moe-manager:us-central1:moe-manager-db \
+  --no-allow-unauthenticated \
+  --add-cloudsql-instances moe-manager:us-central1:moe-manager-db-demo \
   --set-env-vars AUTH_BYPASS=true,AUTH_BYPASS_ALLOW_CLOUD_RUN=true,VERTEX_PROJECT=moe-manager,VERTEX_LOCATION=us-central1,VERTEX_MODEL=gemini-2.5-flash \
-  --set-secrets DATABASE_URL=DATABASE_URL:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest
+  --set-secrets DATABASE_URL=DATABASE_URL_DEMO:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest
 ```
+
+`--no-allow-unauthenticated` の場合、到達するクライアントには Cloud Run の IAM トークンが必要です。iOS から直接叩く簡易デモでどうしても公開せざるを得ないときは `--allow-unauthenticated` にしてもよいですが、その場合も**デモ専用 DB は必須**（本番データを晒さない）とし、URL の共有範囲を限定してください。
 
 フロントは開発者設定の「開発用ユーザー ID」にデモ用の値（例 `demo-user-1`）を入力し、ベース URL をこのデモサービスの URL に向けます。`AUTH_BYPASS_ALLOW_CLOUD_RUN` を付けない本番サービスは、誤って `AUTH_BYPASS=true` を設定しても起動時に fail-fast します。
 

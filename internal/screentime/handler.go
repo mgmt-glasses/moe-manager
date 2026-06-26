@@ -29,16 +29,16 @@ func NewHandler(svc ServiceInterface) *Handler {
 
 type updateRequest struct {
 	Minutes       int `json:"minutes"`
-	TargetMinutes int `json:"target_minutes"`
+	TargetMinutes int `json:"targetMinutes"`
 }
 
 type recordResponse struct {
-	RecordID      string `json:"record_id"`
-	UserID        string `json:"user_id"`
+	RecordID      string `json:"recordId"`
+	UserID        string `json:"userId"`
 	Date          string `json:"date"`
 	Minutes       int    `json:"minutes"`
-	TargetMinutes int    `json:"target_minutes"`
-	DiffMinutes   int    `json:"diff_minutes"`
+	TargetMinutes int    `json:"targetMinutes"`
+	DiffMinutes   int    `json:"diffMinutes"`
 }
 
 func toResponse(r *ScreenTimeRecord) recordResponse {
@@ -153,7 +153,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 type analyzeRequest struct {
 	Image    string `json:"image"`
-	MimeType string `json:"mime_type"`
+	MimeType string `json:"mimeType"`
 }
 
 func (h *Handler) Analyze(w http.ResponseWriter, r *http.Request) {

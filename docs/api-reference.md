@@ -44,6 +44,30 @@ export PORT=8081
 go run ./cmd/api
 ```
 
+### ローカル開発の認証バイパス
+
+フロントエンドの Firebase ログインが未実装の段階でも認証必須 API を試せるよう、ローカル限定のバイパスを用意しています。
+
+`AUTH_BYPASS=true` を設定して起動すると、ID token の署名検証を行わず、`Authorization: Bearer` で渡した文字列をそのまま `uid` として扱います。`FIREBASE_PROJECT_ID` は不要です。
+
+```bash
+export DATABASE_URL=postgres://...
+export AUTH_BYPASS=true
+export PORT=8081
+
+go run ./cmd/api
+```
+
+クライアントは `uid` として使いたい値（通常はユーザー ID）をそのまま Bearer トークンに載せます。
+
+```http
+Authorization: Bearer <userId>
+```
+
+`/api/v1/users/{userId}` 配下では、この値とパスの `{userId}` が一致する必要があります（通常の認証と同じ所有権チェックが働きます）。
+
+> **警告:** `AUTH_BYPASS=true` はトークンの署名を一切検証せず、任意の `uid` でのなりすましを許します。ローカル開発・テスト専用です。本番・公開環境では絶対に設定せず、`FIREBASE_PROJECT_ID` を設定した通常の Firebase 検証を使ってください。
+
 ---
 
 ## 共通レスポンス形式

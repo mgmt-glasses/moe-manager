@@ -139,10 +139,20 @@ func main() {
 	voiceSvc := voice.NewService(voiceSynthesizer, voiceStorage, voiceRepo, voiceUserChecker)
 	voiceHandler := voice.NewHandler(voiceSvc)
 
-	firebaseProjectID := os.Getenv("FIREBASE_PROJECT_ID")
-	authVerifier, err := appauth.NewFirebaseVerifier(firebaseProjectID)
-	if err != nil {
-		log.Fatalf("failed to init auth verifier: %v", err)
+	var authVerifier appauth.TokenVerifier
+	if os.Getenv("AUTH_BYPASS") == "true" {
+		// ローカル開発・テスト専用。Firebase ログイン未実装のフロントから
+		// Authorization: Bearer <userId> だけで認証必須 API を叩けるようにする。
+		// 本番では AUTH_BYPASS を設定しないこと（フェイルクローズ）。
+		log.Print("WARNING: AUTH_BYPASS=true — 認証バイパス有効。トークン署名を検証しません。ローカル開発専用です。")
+		authVerifier = appauth.BypassVerifier{}
+	} else {
+		firebaseProjectID := os.Getenv("FIREBASE_PROJECT_ID")
+		verifier, err := appauth.NewFirebaseVerifier(firebaseProjectID)
+		if err != nil {
+			log.Fatalf("failed to init auth verifier: %v", err)
+		}
+		authVerifier = verifier
 	}
 	authMiddleware := appauth.NewMiddleware(authVerifier)
 

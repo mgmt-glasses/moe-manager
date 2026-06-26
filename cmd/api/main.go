@@ -139,10 +139,28 @@ func main() {
 	voiceSvc := voice.NewService(voiceSynthesizer, voiceStorage, voiceRepo, voiceUserChecker)
 	voiceHandler := voice.NewHandler(voiceSvc)
 
-	firebaseProjectID := os.Getenv("FIREBASE_PROJECT_ID")
-	authVerifier, err := appauth.NewFirebaseVerifier(firebaseProjectID)
-	if err != nil {
-		log.Fatalf("failed to init auth verifier: %v", err)
+	var authVerifier appauth.TokenVerifier
+	if os.Getenv("AUTH_BYPASS") == "true" {
+		// ローカル開発・テスト専用。Firebase ログイン未実装のフロントから
+		// Authorization: Bearer <userId> だけで認証必須 API を叩けるようにする。
+		// 本番では AUTH_BYPASS を設定しないこと（フェイルクローズ）。
+		//
+		// 多層防御: Cloud Run は予約環境変数 K_SERVICE を必ず設定する。
+		// 本番（Cloud Run）に AUTH_BYPASS が誤混入しても、ここで起動を止める。
+		// 経路自体をリリースバイナリから除外する build タグ分離（案A）は
+		// 将来対応とする（ADR-0010 参照）。
+		if os.Getenv("K_SERVICE") != "" {
+			log.Fatalf("AUTH_BYPASS=true は Cloud Run 環境（K_SERVICE=%q）では使用できません。本番では認証バイパスを無効にしてください。", os.Getenv("K_SERVICE"))
+		}
+		log.Print("WARNING: AUTH_BYPASS=true — 認証バイパス有効。トークン署名を検証しません。ローカル開発専用です。")
+		authVerifier = appauth.BypassVerifier{}
+	} else {
+		firebaseProjectID := os.Getenv("FIREBASE_PROJECT_ID")
+		verifier, err := appauth.NewFirebaseVerifier(firebaseProjectID)
+		if err != nil {
+			log.Fatalf("failed to init auth verifier: %v", err)
+		}
+		authVerifier = verifier
 	}
 	authMiddleware := appauth.NewMiddleware(authVerifier)
 

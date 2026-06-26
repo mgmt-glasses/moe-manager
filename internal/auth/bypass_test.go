@@ -1,0 +1,51 @@
+package auth_test
+
+import (
+	"context"
+	"errors"
+	"strings"
+	"testing"
+
+	"github.com/mgmt-glasses/moe-manager/internal/auth"
+)
+
+func TestBypassVerifierUsesTokenAsUID(t *testing.T) {
+	user, err := auth.BypassVerifier{}.VerifyIDToken(context.Background(), "u_001")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if user.UID != "u_001" {
+		t.Fatalf("expected UID u_001, got %q", user.UID)
+	}
+}
+
+func TestBypassVerifierTrimsToken(t *testing.T) {
+	user, err := auth.BypassVerifier{}.VerifyIDToken(context.Background(), "  Bearer-less-raw  ")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if user.UID != "Bearer-less-raw" {
+		t.Fatalf("expected trimmed UID, got %q", user.UID)
+	}
+}
+
+func TestBypassVerifierRejectsEmptyToken(t *testing.T) {
+	for _, raw := range []string{"", "   "} {
+		_, err := auth.BypassVerifier{}.VerifyIDToken(context.Background(), raw)
+		if !errors.Is(err, auth.ErrInvalidToken) {
+			t.Fatalf("expected ErrInvalidToken for %q, got %v", raw, err)
+		}
+	}
+}
+
+func TestBypassVerifierUIDLengthBoundary(t *testing.T) {
+	maxLen := strings.Repeat("a", 128)
+	if _, err := (auth.BypassVerifier{}).VerifyIDToken(context.Background(), maxLen); err != nil {
+		t.Fatalf("128-char uid should be accepted, got %v", err)
+	}
+
+	tooLong := strings.Repeat("a", 129)
+	if _, err := (auth.BypassVerifier{}).VerifyIDToken(context.Background(), tooLong); !errors.Is(err, auth.ErrInvalidToken) {
+		t.Fatalf("expected ErrInvalidToken for 129-char uid, got %v", err)
+	}
+}

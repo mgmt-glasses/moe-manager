@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
@@ -103,18 +104,37 @@ async def clear_reference_audio(preset_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+def _wav_to_mp3(wav_bytes: bytes) -> bytes:
+    """Transcode WAV bytes to MP3 using ffmpeg (bundled in the container image)."""
+    proc = subprocess.run(
+        [
+            "ffmpeg", "-hide_banner", "-loglevel", "error",
+            "-i", "pipe:0", "-f", "mp3", "-b:a", "128k", "pipe:1",
+        ],
+        input=wav_bytes,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    )
+    return proc.stdout
+
+
 @app.post("/generate")
 async def generate_voice(request: VoiceRequest):
     """
     Receives text with emojis, preset configuration, generates voice,
-    and returns a binary audio stream directly without saving to disk.
+    and returns a binary MP3 audio stream directly without saving to disk.
     """
     if voice_use_case is None:
         raise HTTPException(status_code=503, detail="TTS Engine is not initialized")
-    
+
     try:
-        audio_bytes = voice_use_case.execute(request)
-        return StreamingResponse(BytesIO(audio_bytes), media_type="audio/wav")
+        wav_bytes = voice_use_case.execute(request)
+        mp3_bytes = _wav_to_mp3(wav_bytes)
+        return StreamingResponse(BytesIO(mp3_bytes), media_type="audio/mpeg")
+    except subprocess.CalledProcessError as e:
+        detail = e.stderr.decode("utf-8", "replace") if e.stderr else "ffmpeg failed"
+        raise HTTPException(status_code=500, detail=f"mp3 encode failed: {detail}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

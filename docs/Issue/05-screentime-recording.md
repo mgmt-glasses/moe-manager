@@ -36,7 +36,7 @@ DB テーブル名は `screentime_records` を正とし、旧表記の `entertai
 - 依存する Issue: ユーザ目標時間を扱う場合はユーザ設定 API
 - 後続 Issue: `02-character-chat.md`, `06-statistics-summary.md`
 
-API パスは既存方針に合わせて `entertainment-records` を使う可能性があるが、DB/domain の正規名は `screentime_records` とする。
+API パスは現行実装に合わせて `screentime` を使用する（過去の `entertainment-records` という命名方針は破棄）。
 
 ## 受け入れ条件
 
@@ -51,9 +51,9 @@ API パスは既存方針に合わせて `entertainment-records` を使う可能
 
 ### API
 
-- `PUT /api/v1/users/{userId}/entertainment-records/{date}`
-- `GET /api/v1/users/{userId}/entertainment-records/{date}`
-- `GET /api/v1/users/{userId}/entertainment-records`
+- `POST /api/v1/users/{userId}/screentime/{date}`
+- `GET /api/v1/users/{userId}/screentime/{date}`
+- `GET /api/v1/users/{userId}/screentime`
 
 ### DB
 

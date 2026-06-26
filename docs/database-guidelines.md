@@ -45,7 +45,7 @@ DB は、ユーザ設定、タスク、娯楽時間、チャット履歴を永�
 命名整理:
 
 - DB テーブル名は現行実装に合わせて `screentime_records` を正とする。
-- API パスはフロントエンドの意味が分かりやすい `entertainment-records` を使ってよい。
+- API パスは現行実装に合わせて `screentime` を使用する（過去ドキュメントの `entertainment-records` は旧設計として扱う）。
 - 既存ドキュメント内の `entertainment_records` と `entertainment_times` は旧表記として扱う。
 - キャラクターのボイス設定は `voice_preset_id` を正とし、既存 DB 設計書の `voice_key` は旧表記として扱う。
 

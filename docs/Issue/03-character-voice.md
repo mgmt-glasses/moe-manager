@@ -68,7 +68,7 @@ TTS 失敗時はチャットテキストの生成・保存を成功として扱�
 ### API
 
 - `POST /api/v1/users/{userId}/voices`
-- `GET /api/v1/voice-files/{voiceFileId}`
+- `GET /api/v1/users/{userId}/voice-files/{voiceFileId}`
 - チャット API のレスポンスに音声参照を含める可能性がある。
 
 ### DB

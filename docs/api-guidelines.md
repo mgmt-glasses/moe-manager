@@ -87,10 +87,10 @@ MVP で扱う API ドメインは以下です。
 | --- | --- | --- |
 | 1 | 基盤 | `POST /users`, `GET /users/{userId}`, `PATCH /users/{userId}`, `GET /characters`, `GET /characters/{characterId}`, `PATCH /users/{userId}/selected-character` |
 | 2 | タスク | `POST /users/{userId}/tasks`, `GET /users/{userId}/tasks`, `PATCH /users/{userId}/tasks/{taskId}/complete`, `PATCH /users/{userId}/tasks/{taskId}/reopen`, `DELETE /users/{userId}/tasks/{taskId}` |
-| 3 | 娯楽時間 | `PUT /users/{userId}/entertainment-records/{date}`, `GET /users/{userId}/entertainment-records/{date}`, `GET /users/{userId}/entertainment-records` |
+| 3 | 娯楽時間 | `POST /users/{userId}/screentime/{date}`, `GET /users/{userId}/screentime/{date}`, `GET /users/{userId}/screentime`, `POST /users/{userId}/screentime/analyze` |
 | 4 | 統計 | `GET /users/{userId}/stats/today`, `GET /users/{userId}/stats/daily/{date}`, `GET /users/{userId}/stats/weekly` |
 | 5 | チャット | `POST /users/{userId}/chat/messages`, `GET /users/{userId}/chat/messages`, `GET /users/{userId}/chat-logs`, `GET /users/{userId}/chat-logs/dates` |
-| 6 | ボイス | `POST /users/{userId}/voices`, `GET /voice-files/{voiceFileId}` |
+| 6 | ボイス | `POST /users/{userId}/voices`, `GET /users/{userId}/voice-files/{voiceFileId}` |
 
 パスは Base URL `/api/v1` 配下として扱います。
 

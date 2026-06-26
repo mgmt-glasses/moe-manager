@@ -5,8 +5,12 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/mgmt-glasses/moe-manager/internal/user"
 )
+
+// pgUniqueViolation は PostgreSQL の一意制約違反コード。
+const pgUniqueViolation = "23505"
 
 type PostgresUserRepository struct {
 	db *sql.DB
@@ -21,6 +25,10 @@ func (r *PostgresUserRepository) Create(ctx context.Context, u user.User) error 
 		INSERT INTO users (id, name, president_name, selected_character_id, target_entertainment_minutes, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`, u.ID, u.Name, u.PresidentName, u.SelectedCharacterID, u.TargetEntertainmentMinutes, u.CreatedAt, u.UpdatedAt)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation {
+		return user.ErrAlreadyExists
+	}
 	return err
 }
 

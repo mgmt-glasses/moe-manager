@@ -85,6 +85,7 @@ go run ./cmd/api
 | `CHARACTER_NOT_FOUND` | 400 | 指定したキャラクターが存在しない |
 | `NOT_FOUND` | 404 | リソースが見つからない |
 | `FORBIDDEN` | 403 | 操作権限なし |
+| `ALREADY_EXISTS` | 409 | リソースが既に存在する（例: 同一ユーザーの重複作成） |
 | `NO_CHARACTER_SELECTED` | 422 | キャラクターが未選択 |
 | `PERSONA_NOT_FOUND` | 422 | キャラクター設定が未登録 |
 | `SERVICE_UNAVAILABLE` | 503 | 外部サービスまたは一部機能が利用不可 |

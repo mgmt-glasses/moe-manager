@@ -41,3 +41,4 @@ Cloud Run への公開（[ADR-0009](0009-deployment-cloud-run-cloud-sql.md)）�
 - `FIREBASE_PROJECT_ID` が未設定だとサーバー起動に失敗する（フェイルクローズ）。ローカル・Cloud Run 双方で設定が必須。
 - 認証仕様の正は `internal/auth` の実装と [api-reference](../api-reference.md) / [api-guidelines](../api-guidelines.md) とする。
 - トークン失効（revoke）の即時反映やカスタムクレームによるロール認可は本 ADR の範囲外とし、必要になった時点で別途検討する。
+- 公開証明書キャッシュの可用性は次の方針で硬化する。期限切れ時の再取得は singleflight で 1 本に集約する（thundering herd 回避）。取得失敗時は既存 cert を短い猶予の間 stale のまま使い続け、再取得を間引く（cert エンドポイント一時障害での全ログイン不能を回避）。直前世代の cert を 1 世代保持し、ローテーション重複期間中の旧 kid トークンも検証できるようにする。

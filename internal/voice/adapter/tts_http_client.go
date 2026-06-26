@@ -14,7 +14,7 @@ import (
 
 const defaultTTSTimeout = 60 * time.Second
 
-// TTSHTTPClient calls the Python voice-library service (POST /generate → WAV bytes).
+// TTSHTTPClient calls the Python voice-library service (POST /generate → MP3 bytes).
 type TTSHTTPClient struct {
 	baseURL    string
 	httpClient *http.Client

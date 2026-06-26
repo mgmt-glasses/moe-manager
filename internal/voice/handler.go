@@ -93,7 +93,7 @@ func (h *Handler) GetAudio(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rc.Close()
 
-	w.Header().Set("Content-Type", "audio/wav")
+	w.Header().Set("Content-Type", "audio/mpeg")
 	w.WriteHeader(http.StatusOK)
 	if _, err := io.Copy(w, rc); err != nil {
 		log.Printf("voice GetAudio: stream error for %s: %v", voiceFileID, err)

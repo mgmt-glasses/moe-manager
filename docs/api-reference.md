@@ -539,7 +539,7 @@ POST /api/v1/users/{userId}/chat/messages
 
 ## 音声生成
 
-選択中のキャラクターの声でテキストを読み上げる WAV ファイルを生成します。
+選択中のキャラクターの声でテキストを読み上げる MP3 ファイルを生成します。
 
 > **前提**: TTS サービス（Python voice-library）が `TTS_SERVICE_URL`（デフォルト: `http://localhost:8001`）で起動していること。
 
@@ -596,12 +596,12 @@ POST /api/v1/users/{userId}/voices
 GET /api/v1/users/{userId}/voice-files/{voiceFileId}
 ```
 
-> ⚠️ このエンドポイントは JSON ではなく **WAV バイナリ** を返します。
+> ⚠️ このエンドポイントは JSON ではなく **MP3 バイナリ** を返します。
 
 **レスポンスヘッダー**
 
 ```
-Content-Type: audio/wav
+Content-Type: audio/mpeg
 ```
 
 **フロントエンドでの使用例**

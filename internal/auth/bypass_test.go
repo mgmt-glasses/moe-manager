@@ -3,6 +3,7 @@ package auth_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/mgmt-glasses/moe-manager/internal/auth"
@@ -34,5 +35,17 @@ func TestBypassVerifierRejectsEmptyToken(t *testing.T) {
 		if !errors.Is(err, auth.ErrInvalidToken) {
 			t.Fatalf("expected ErrInvalidToken for %q, got %v", raw, err)
 		}
+	}
+}
+
+func TestBypassVerifierUIDLengthBoundary(t *testing.T) {
+	maxLen := strings.Repeat("a", 128)
+	if _, err := (auth.BypassVerifier{}).VerifyIDToken(context.Background(), maxLen); err != nil {
+		t.Fatalf("128-char uid should be accepted, got %v", err)
+	}
+
+	tooLong := strings.Repeat("a", 129)
+	if _, err := (auth.BypassVerifier{}).VerifyIDToken(context.Background(), tooLong); !errors.Is(err, auth.ErrInvalidToken) {
+		t.Fatalf("expected ErrInvalidToken for 129-char uid, got %v", err)
 	}
 }

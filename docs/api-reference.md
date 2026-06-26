@@ -67,6 +67,8 @@ Authorization: Bearer <userId>
 `/api/v1/users/{userId}` 配下では、この値とパスの `{userId}` が一致する必要があります（通常の認証と同じ所有権チェックが働きます）。
 
 > **警告:** `AUTH_BYPASS=true` はトークンの署名を一切検証せず、任意の `uid` でのなりすましを許します。ローカル開発・テスト専用です。本番・公開環境では絶対に設定せず、`FIREBASE_PROJECT_ID` を設定した通常の Firebase 検証を使ってください。
+>
+> 多層防御として、Cloud Run の予約環境変数 `K_SERVICE` が設定された状態で `AUTH_BYPASS=true` を検出すると、サーバーは起動を拒否します（fail-fast）。本番への誤設定を構造的に防ぎます。
 
 ---
 

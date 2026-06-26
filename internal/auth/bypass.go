@@ -18,10 +18,15 @@ import (
 // 本番では AUTH_BYPASS を設定せず、必ず FirebaseVerifier を使うこと。
 type BypassVerifier struct{}
 
-// VerifyIDToken はトークン文字列を UID とみなして返す。空トークンだけ拒否する。
+// maxBypassUIDLen は uid として受け付ける最大長。FirebaseVerifier が
+// subject に課す上限（128）に揃え、長大 uid による DB 側の想定外を避ける。
+const maxBypassUIDLen = 128
+
+// VerifyIDToken はトークン文字列を UID とみなして返す。
+// 空トークンと上限超過の uid を拒否する。
 func (BypassVerifier) VerifyIDToken(_ context.Context, rawToken string) (User, error) {
 	uid := strings.TrimSpace(rawToken)
-	if uid == "" {
+	if uid == "" || len(uid) > maxBypassUIDLen {
 		return User{}, ErrInvalidToken
 	}
 	return User{UID: uid}, nil

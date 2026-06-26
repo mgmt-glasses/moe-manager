@@ -154,6 +154,9 @@ func (v *FirebaseVerifier) refreshCerts(ctx context.Context) error {
 			// cert エンドポイント障害中の連続再試行・全ログイン不能を防ぐ。
 			v.expires = v.now().Add(refreshRetryGrace)
 		}
+		// 初回取得前（certs 空）に失敗した場合は expires を据え置く。stale で
+		// 提供できる cert が無いため、後続リクエストは取得が成功するまで
+		// （singleflight で 1 本ずつ）再試行する。
 		v.mu.Unlock()
 		return err
 	}
